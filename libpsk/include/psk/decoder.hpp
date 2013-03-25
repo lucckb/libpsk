@@ -22,7 +22,7 @@ namespace psk {
 //Sample type variable
 typedef short sample_type;
 //Vector data
-typedef std::array<std::pair<long, long>, 8> signal_vector_type;
+typedef std::array<long, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<long, 16> sync_array_type;
 //Squelch tresh type
@@ -67,25 +67,41 @@ public:
 	//Process input sample buffer
 	void operator()( sample_type* samples, std::size_t sample_size );
 	//Get signal vector
-	signal_vector_type get_signal_vector( ) const;
+	signal_vector_type get_vector_data( ) const
+	{
+		return m_iq_phase_array;
+	}
 	//Get sync array type
-	sync_array_type get_sync_data() const;
+	sync_array_type get_sync_data() const
+	{
+		return m_sync_array;
+	}
 	//Reset decoder
 	void reset();
 	//Set receive frequency
 	void set_frequency( int freq );
 	//Set detector mode
-	void set_mode( mode mode, baudrate rate );
+	void set_mode( mode mode, baudrate rate )
+	{
+		m_rx_mode = mode;
+		m_baudrate = rate;
+	}
 	//Set AFC limit
 	void set_afc_limit( int limit );
 	//Get current frequency
-	int get_frequency() const;
+	int get_frequency() const
+	{
+		return m_rx_frequency;
+	}
 	//Get signal level
-	int get_signal_level() const;
+	int get_signal_level() const
+	{
+		return m_sql_level>0?m_sql_level:0;
+	}
 	//Set squelch tresh
 	void set_squelch_tresh( sqelch_value_type tresh, squelch_mode mode );
-	void calc_quality( double angle );
 private:
+	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
 	void calc_bit_filter( std::complex<double> samp );
 	void calc_agc( std::complex<double> samp );
@@ -98,15 +114,15 @@ private:
 		return m_rx_mode != mode::bpsk;
 	}
 private:
-	baudrate m_baudrate;
-	double m_vco_phz;
-	int m_afc_timer;
-	bool m_afc_capture_on;
-	int m_rx_frequency;
+	baudrate m_baudrate {  baudrate::b63 };
+	double m_vco_phz {};
+	int m_afc_timer {};
+	bool m_afc_capture_on {};
+	int m_rx_frequency { 1500 };
 	double m_nco_phzinc;
 	double m_afc_limit;
-	double m_afc_max;
-	double m_afc_min;
+	double m_afc_max { m_nco_phzinc + m_afc_limit };
+	double m_afc_min { m_nco_phzinc - m_afc_limit };
 	std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que1;
 	std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que2;
 	std::array<std::complex<double>, BITFIR_LENGTH> m_que3;
@@ -119,18 +135,17 @@ private:
 	int m_sql_level;
 	int m_clk_err_counter;
 	int m_clk_err_timer;
-	int m_clk_err;
 	double m_dev_ave;
-	double m_freq_error;
-	int m_sample_cnt;
+	double m_freq_error {};
+	int m_sample_cnt {};
 	std::complex<double> m_freq_signal;
-	bool m_fast_afc_mode;
+	bool m_fast_afc_mode {};
 	std::complex<double> m_bit_signal;
-	bool m_imd_valid;
+	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
-	double m_agc_ave;
-	bool m_afc_on;
+	double m_agc_ave {};
+	bool m_afc_on {};
 	double m_fperr_ave {};
 	double m_fferr_ave {};
 	std::complex<double> m_z1;
@@ -153,6 +168,14 @@ private:
 	int m_ncnt {};
 	int m_sq_thresh { 50 };
 	double m_nlp_k;
+	int m_bit_pos {};
+	int m_pk_pos {};
+	int m_new_pk_pos { 5 };
+	std::array<long, 16> m_sync_array;
+	double m_bit_phase_pos {};
+	double m_bit_phase_inc { 16.0 / m_sample_freq };
+	int m_last_pk_pos {};
+	int m_clk_error {};
 };
 
 /* ------------------------------------------------------------------------- */

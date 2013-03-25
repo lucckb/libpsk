@@ -9,6 +9,7 @@
 #include "psk/decoder.hpp"
 #include <complex>
 #include <cmath>
+#include <cstdio>
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -31,7 +32,7 @@ namespace
 	constexpr double ANGLE_TBL2[] = { 3.0*PI2/4.0, PI2, PI2/4.0, PI2/2.0 };
 	constexpr auto NLP_K = 100.0;		//narrow phase derived afc constans
 	constexpr auto FNLP_K = 30.0;
-
+	constexpr auto Ts = .032+.00000;			// Ts == symbol period
 	// Lookup table to get symbol from non-inverted data stream
 	static constexpr unsigned char ConvolutionCodeTable[] =
 	{
@@ -639,18 +640,33 @@ namespace
 		0xB570,	// ASCII = 254	101101010111
 		0xB5B0	// ASCII = 255	101101011011
 	};
+	constexpr int HALF_TBL[] = {
+	    7,	// 0
+	   8,	// 1
+	   9,	// 2
+	   10,	// 3
+	   11,	// 4
+	   12,	// 5
+	   13,	// 6
+	   14,	// 7
+	    0,	// 8
+	    1,	// 9
+	    2,	// 10
+	    3,	// 11
+	    4,	// 12
+	    5,	// 13
+	    6,	// 14
+	    7,	// 15
+	};
+	auto constexpr  AFC_TIMELIMIT =  10;
+	auto constexpr  AFC_FTIMELIMIT = 2;
 }
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
-decoder::decoder( samplerate_type sample_rate )
-	: m_baudrate( baudrate::b63 ), m_vco_phz( 0 ), m_afc_timer( 0 ),
-	  m_afc_capture_on(false), m_rx_frequency( 1500 ),
+decoder::decoder( samplerate_type sample_rate ) :
 	  m_nco_phzinc( PI2*double(m_rx_frequency)/double(sample_rate) ),
 	  m_afc_limit(50.0*PI2/double(sample_rate) ),
-	  m_afc_max( m_nco_phzinc + m_afc_limit ), m_afc_min( m_nco_phzinc - m_afc_limit ),
-	  m_freq_error(0.0), m_sample_cnt(0), m_fast_afc_mode(false),
-	  m_imd_valid(false), m_sample_freq( sample_rate ), m_agc_ave( 0 ),
-	  m_afc_on(false), m_nlp_k( NLP_K )
+	  m_sample_freq( sample_rate ), m_nlp_k( NLP_K )
 
 {
 	for( int j=0; j<2048; j++)		//init inverse varicode lookup decoder table
@@ -669,6 +685,53 @@ decoder::decoder( samplerate_type sample_rate )
 	}
 	//Initialy reset the decoder
 	reset();
+}
+
+/* ------------------------------------------------------------------------- */
+//Set squelch tresh
+void decoder::set_squelch_tresh( sqelch_value_type thresh, squelch_mode mode )
+{
+	m_sq_thresh = thresh;
+	if( mode == squelch_mode::fast ) m_squelch_speed = 20;
+	else if( mode == squelch_mode::slow ) m_squelch_speed = 75;
+}
+/* ------------------------------------------------------------------------- */
+void decoder::set_frequency( int freq )
+{
+	if( freq != m_rx_frequency)
+	{
+		m_rx_frequency = freq;
+		m_nco_phzinc = PI2*(double)freq/m_sample_freq;
+		m_fferr_ave = 0.0;
+		m_fperr_ave = 0.0;
+		if(m_fast_afc_mode)
+			m_afc_timer = AFC_FTIMELIMIT;
+		else
+			m_afc_timer = AFC_TIMELIMIT;
+	// calculate new limits around new receive frequency
+		m_afc_max =  m_nco_phzinc + m_afc_limit;
+		m_afc_min =  m_nco_phzinc - m_afc_limit;
+		if(m_afc_min<=0.0)
+			m_afc_min = 0.0;
+		m_pcnt = 0;
+		m_pcnt = 0;
+	}
+}
+/* ------------------------------------------------------------------------- */
+//Set AFC limit
+void decoder::set_afc_limit( int limit )
+{
+	if(limit==0) m_afc_on = false;
+	else m_afc_on = true;
+	if(limit==3000) m_afc_on = true;
+	else m_afc_on = false;
+	m_afc_limit = (double)limit*PI2/m_sample_freq;
+	// calculate new limits around current receive frequency
+	m_afc_max =  m_nco_phzinc + m_freq_error + m_afc_limit;
+	m_afc_min =  m_nco_phzinc + m_freq_error - m_afc_limit;
+	if(m_afc_min<=0.0) m_afc_min = 0.0;
+	if(m_fast_afc_mode)  m_nlp_k = FNLP_K;
+	else m_nlp_k = NLP_K;
 }
 /* ------------------------------------------------------------------------- */
 //Viterbi decode
@@ -750,8 +813,8 @@ void decoder::reset()
 	m_sql_level = 10;
 	m_clk_err_counter = 0;
 	m_clk_err_timer = 0;
-	m_clk_err = 0;
 	m_dev_ave = 90.0;
+	m_clk_error = 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -759,9 +822,8 @@ void decoder::calc_bit_filter( std::complex<double> samp )
 {
 	std::complex<double> acc1;
 	std::complex<double> acc2;
-	std::complex<double>* Firptr;
 	m_que3[m_fir3_state] = samp;
-	Firptr = m_que3.data();
+	std::complex<double>* Firptr = m_que3.data();
 	const double* Kptr1 = FreqFirCoef + BITFIR_LENGTH - m_fir3_state;	//frequency error filter
 	const double* Kptr2 = BitFirCoef + BITFIR_LENGTH - m_fir3_state;	//bit data filter
 	for(int j=0; j<	BITFIR_LENGTH;j++)	//do the MACs
@@ -975,6 +1037,7 @@ void decoder::decode_symb( std::complex<double> newsamp )
 		if(GotChar && (ch!=0) && m_sq_open )
 		{
 			//::PostMessage(m_hWnd, MSG_PSKCHARRDY, ch, m_RxChannel);
+			std::printf("EVENT: GOT_CHAR %c\n", ch );
 		}
 		//GotChar = false;
 }
@@ -1095,7 +1158,75 @@ void decoder::calc_quality( double angle )
 /* ------------------------------------------------------------------------- */
 bool decoder::symb_sync(std::complex<double> sample)
 {
+	bool Trigger=false;
+	double max;
+	double energy;
+	int BitPos = m_bit_pos;
+	if(BitPos<16)
+	{
+		energy = (sample.real()*sample.real()) + (sample.imag()*sample.imag());
+		if( energy > 4.0)		//wait for AGC to settle down
+			energy = 1.0;
+		m_sync_ave[BitPos] = (1.0-1.0/82.0)*m_sync_ave[BitPos] + (1.0/82.0)*energy;
+		if( BitPos == m_pk_pos )	// see if at middle of symbol
+		{
+			Trigger = true;
+			m_sync_array[m_pk_pos] = int(900.0*m_sync_ave[m_pk_pos]);
+		}
+		else
+		{
+			Trigger = false;
+			m_sync_array[BitPos] = int(750.0*m_sync_ave[BitPos]);
+		}
+		if( BitPos == HALF_TBL[m_new_pk_pos] )	//don't change pk pos until
+			m_pk_pos = m_new_pk_pos;			// halfway into next bit.
+		BitPos++;
+	}
 
+		m_bit_phase_pos += ( m_bit_phase_inc);
+		if( m_bit_phase_pos >= Ts )
+		{									// here every symbol time
+			m_bit_phase_pos = std::fmod(m_bit_phase_pos, Ts);	//keep phase bounded
+			if((BitPos==15) && (m_pk_pos==15))	//if missed the 15 bin before rollover
+				Trigger = true;
+			BitPos = 0;
+			max = -1e10;
+			for( int i=0; i<16; i++)		//find maximum energy pk
+			{
+				energy = m_sync_ave[i];
+				if( energy > max )
+				{
+					m_new_pk_pos = i;
+					max = energy;
+				}
+			}
+			if(m_sq_open)
+			{
+				if( m_pk_pos == m_last_pk_pos+1 )	//calculate clock error
+					m_clk_err_counter++;
+				else
+					if( m_pk_pos == m_last_pk_pos-1 )
+						m_clk_err_counter--;
+				if( m_clk_err_timer++ > 313 )	// every 10 seconds sample clk drift
+				{
+					m_clk_error = m_clk_err_counter*200;	//each count is 200ppm
+					m_clk_err_counter = 0;
+					m_clk_err_timer = 0;
+					//::PostMessage(m_hWnd, MSG_CLKERROR, m_ClkError, m_RxChannel);
+					std::printf("EVENT: MSGCLKERROR %i", m_clk_error);
+					//TODO report error flag
+				}
+			}
+			else
+			{
+				m_clk_error = 0;
+				m_clk_err_counter = 0;
+				m_clk_err_timer = 0;
+			}
+			m_last_pk_pos = m_pk_pos;
+		}
+		m_bit_pos = BitPos;
+		return Trigger;
 }
 /* ------------------------------------------------------------------------- */
 //Process input sample buffer
@@ -1175,10 +1306,11 @@ void decoder::operator()( sample_type* samples, std::size_t sample_size )
 		if( m_calc_imd.calc_energies(acc) )
 		{
 			int m_imd_value;
-			if( m_calc_imd.calc_value( m_imd_value ) ) ; //TODO
+			if( m_calc_imd.calc_value( m_imd_value ) )  //TODO
 				//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel);
 				//else
 				//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel+0x0080);
+				std::printf("IMD READY %i\n", m_imd_value);
 		}
 	}
 	else
