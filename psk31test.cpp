@@ -7,15 +7,24 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-
+#include <libavutil/opt.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/samplefmt.h>
+#include <libswresample/swresample.h>
 }
 
 #include <psk/decoder.hpp>
 
-namespace _internal
+int alloc_samples_array_and_data(uint8_t ***data, int *linesize, int nb_channels,
+int nb_samples, enum AVSampleFormat sample_fmt, int align)
 {
-	void on_new_samples( int16_t *sample, std::size_t count );
+	int nb_planes = av_sample_fmt_is_planar(sample_fmt) ? nb_channels : 1;
+	*data = (uint8_t**)av_malloc(sizeof(*data) * nb_planes);
+	if (!*data)
+		return AVERROR(ENOMEM);
+	return av_samples_alloc(*data, linesize, nb_channels, nb_samples, sample_fmt, align);
 }
+
 
 int main(int argc, const char * const *argv )
 {
@@ -71,9 +80,47 @@ int main(int argc, const char * const *argv )
          printf("Couldn't open avcodec\n");
          return -1;
     }
+
+    //Init resample context
+    struct SwrContext *swr_ctx = swr_alloc();
+    if (!swr_ctx)
+    {
+		fprintf(stderr, "Could not allocate resampler context\n");
+		return AVERROR(ENOMEM);
+    }
+    /* set options */
+      const int dst_rate = 8000;
+      const int dst_nb_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_MONO);
+      AVSampleFormat dst_sample_fmt = AV_SAMPLE_FMT_DBL;
+      av_opt_set_int(swr_ctx, "in_sample_rate", pCodecCtx->sample_rate, 0);
+      av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", pCodecCtx->sample_fmt, 0);
+      av_opt_set_int(swr_ctx, "out_channel_layout", AV_CH_LAYOUT_MONO, 0);
+      av_opt_set_int(swr_ctx, "out_sample_rate", dst_rate, 0);
+      av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", dst_sample_fmt, 0);
+
+
+    uint8_t **dst_data = NULL;
     AVFrame *decoded_frame = avcodec_alloc_frame();
     AVPacket *avpkt = reinterpret_cast<AVPacket*>(malloc(sizeof(AVPacket)));
-    ham::psk::decoder psk_dec( 8000 );
+    av_init_packet( avpkt );
+    ham::psk::decoder psk_dec( pCodecCtx->sample_rate );
+    psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
+    psk_dec.set_frequency( 2100 );
+    psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::slow );
+    psk_dec.set_afc_limit( 250 );
+    printf("Sample rate %i\n", pCodecCtx->sample_rate );
+    int m_resample_initalized = false;
+    int  dst_linesize;
+#if 0
+    FILE *wfile = fopen("test.raw","wb");
+    if( !wfile )
+    {
+    	printf("Cant open file!!");
+    	return -1;
+    }
+#else
+    FILE *wfile = nullptr;
+#endif
     while(av_read_frame(pFormatCtx, avpkt)>=0)
     {
         int got_frame = 0;
@@ -87,9 +134,54 @@ int main(int argc, const char * const *argv )
             }
             if(got_frame)
             {
+                if( !m_resample_initalized )
+                {
+                	av_opt_set_int(swr_ctx, "in_channel_layout", av_frame_get_channel_layout(decoded_frame), 0);
+                	av_opt_set_int(swr_ctx, "in_channel_count", av_frame_get_channels(decoded_frame), 0);
+                	m_resample_initalized = true;
+                	 /* initialize the resampling context */
+                	  if ((swr_init(swr_ctx)) < 0)
+                	  {
+                		  fprintf(stderr, "Failed to initialize the resampling context\n");
+                	  	 return -1;
+                	  }
+                	  else
+                	  {
+                		  printf("SWR init OK\n");
+                	  }
+                }
             	int data_size = av_samples_get_buffer_size(NULL,pCodecCtx->channels,
             	        decoded_frame->nb_samples, pCodecCtx->sample_fmt, 1);
-            	psk_dec( reinterpret_cast<ham::psk::sample_type*>(decoded_frame->data[0]), data_size );
+            	//printf("Try decode %i %i\n" , data_size, 	pCodecCtx->sample_fmt );
+            	 /* compute the number of converted samples: buffering is avoided
+            	* ensuring that the output buffer will contain at least all the
+            	* converted input samples */
+            	int dst_nb_samples =
+            			av_rescale_rnd(decoded_frame->nb_samples, dst_rate, pCodecCtx->sample_rate, AV_ROUND_UP);
+
+            	if( !dst_data )
+            	{
+            		int ret = alloc_samples_array_and_data(&dst_data, &dst_linesize, dst_nb_channels,
+            				dst_nb_samples, dst_sample_fmt, 0);
+            		if (ret < 0) {
+            			fprintf(stderr, "Could not allocate destination samples\n");
+            			return -1;
+            		}
+
+            	}
+            	 /* convert to destination format */
+            	int ret = swr_convert(swr_ctx, dst_data, dst_nb_samples,
+            			(const uint8_t**)decoded_frame->data, decoded_frame->nb_samples );
+            	if (ret < 0) {
+            		fprintf(stderr, "Error while converting\n");
+            		return -1;
+            	}
+            	 int dst_bufsize = av_samples_get_buffer_size(&dst_linesize, dst_nb_channels,
+            			 ret, dst_sample_fmt, 1);
+            	 if(wfile)
+            		 fwrite( dst_data[0], 1, dst_bufsize, wfile );
+            	psk_dec( reinterpret_cast<double*>(dst_data[0]), dst_bufsize / sizeof(double) );
+            	//printf("Processs samples %lu\n", dst_bufsize / sizeof(double));
             }
         }
         if(len < 0)
@@ -98,8 +190,10 @@ int main(int argc, const char * const *argv )
             return -1;
         }
     }
+    printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
     free( avpkt );
     free( decoded_frame );
+    if(wfile) fclose(wfile);
     return 0;
 }
 
