@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <functional>
 #include <cstdio>
+#include <iostream>
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -53,8 +54,8 @@ namespace
         }
         void on_complete()
         {
-           printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
-           printf("Sample min %f sample max %f\n", sample_min, sample_max);
+           //printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
+           std::cout << "Sample min " << sample_min << " Sample max " << sample_max << std::endl;
         }
     private:
        ham::psk::decoder psk_dec;
