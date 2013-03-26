@@ -12,7 +12,7 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 }
-
+#include <limits>
 #include <psk/decoder.hpp>
 
 int alloc_samples_array_and_data(uint8_t ***data, int *linesize, int nb_channels,
@@ -23,6 +23,44 @@ int nb_samples, enum AVSampleFormat sample_fmt, int align)
 	if (!*data)
 		return AVERROR(ENOMEM);
 	return av_samples_alloc(*data, linesize, nb_channels, nb_samples, sample_fmt, align);
+}
+
+
+
+namespace 
+{
+    class sample_tester
+    {
+    public:
+        sample_tester()  : psk_dec( 8000 )
+            , sample_min( std::numeric_limits<double>::max() )
+            , sample_max( std::numeric_limits<double>::min() )
+        {
+            psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
+            psk_dec.set_frequency( 2100 );
+            psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::slow );
+            psk_dec.set_afc_limit( 250 );
+         }
+        int on_new_samples( double *sample, size_t buflen )
+        {
+            psk_dec( sample, buflen );
+            for( size_t i=0; i<buflen; i++)
+            {
+                if( sample[i] > sample_max) sample_max = sample[i];
+                if( sample[i] < sample_min ) sample_min = sample[i];
+            }
+            return 0;
+        }
+        void on_complete()
+        {
+           printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
+           printf("Sample min %f sample max %f\n", sample_min, sample_max);
+        }
+    private:
+       ham::psk::decoder psk_dec;
+       double sample_min;
+       double sample_max;
+    };
 }
 
 
@@ -50,7 +88,7 @@ int main(int argc, const char * const *argv )
     }
     av_dump_format(pFormatCtx, 0, argv[1], 0);
     int audioStream = -1;
-    for( int i=0; i<pFormatCtx->nb_streams; i++)
+    for( unsigned i=0; i<pFormatCtx->nb_streams; i++)
     {
         if( pFormatCtx->streams[i]->codec->codec_type==AVMEDIA_TYPE_AUDIO  )
         {
@@ -103,11 +141,8 @@ int main(int argc, const char * const *argv )
     AVFrame *decoded_frame = avcodec_alloc_frame();
     AVPacket *avpkt = reinterpret_cast<AVPacket*>(malloc(sizeof(AVPacket)));
     av_init_packet( avpkt );
-    ham::psk::decoder psk_dec( pCodecCtx->sample_rate );
-    psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
-    psk_dec.set_frequency( 2100 );
-    psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::slow );
-    psk_dec.set_afc_limit( 250 );
+    sample_tester stester;
+    
     printf("Sample rate %i\n", pCodecCtx->sample_rate );
     int m_resample_initalized = false;
     int  dst_linesize;
@@ -150,7 +185,7 @@ int main(int argc, const char * const *argv )
                 		  printf("SWR init OK\n");
                 	  }
                 }
-            	int data_size = av_samples_get_buffer_size(NULL,pCodecCtx->channels,
+            	av_samples_get_buffer_size(NULL,pCodecCtx->channels,
             	        decoded_frame->nb_samples, pCodecCtx->sample_fmt, 1);
             	//printf("Try decode %i %i\n" , data_size, 	pCodecCtx->sample_fmt );
             	 /* compute the number of converted samples: buffering is avoided
@@ -180,7 +215,7 @@ int main(int argc, const char * const *argv )
             			 ret, dst_sample_fmt, 1);
             	 if(wfile)
             		 fwrite( dst_data[0], 1, dst_bufsize, wfile );
-            	psk_dec( reinterpret_cast<double*>(dst_data[0]), dst_bufsize / sizeof(double) );
+            	stester.on_new_samples( reinterpret_cast<double*>(dst_data[0]), dst_bufsize / sizeof(double) );
             	//printf("Processs samples %lu\n", dst_bufsize / sizeof(double));
             }
         }
@@ -190,7 +225,7 @@ int main(int argc, const char * const *argv )
             return -1;
         }
     }
-    printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
+    stester.on_complete();
     free( avpkt );
     free( decoded_frame );
     if(wfile) fclose(wfile);
