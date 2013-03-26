@@ -1,6 +1,6 @@
 //http://www.inb.uni-luebeck.de/~boehme/using_libavcodec.html
 //gcc --std=gnu99 -o tutorial01 psk31test.c  -lavformat -lavcodec -lz -lavutil 
-
+//ffplay -f f64le -ar 8000 -channels 1 ~/worksrc/workspace/psk31/test.raw
 #include <stdint.h>
 #include <functional>
 #include <cstdio>
@@ -16,17 +16,6 @@ extern "C" {
 #include <limits>
 #include <psk/decoder.hpp>
 
-int alloc_samples_array_and_data(uint8_t ***data, int *linesize, int nb_channels,
-int nb_samples, enum AVSampleFormat sample_fmt, int align)
-{
-	int nb_planes = av_sample_fmt_is_planar(sample_fmt) ? nb_channels : 1;
-	*data = (uint8_t**)av_malloc(sizeof(*data) * nb_planes);
-	if (!*data)
-		return AVERROR(ENOMEM);
-	return av_samples_alloc(*data, linesize, nb_channels, nb_samples, sample_fmt, align);
-}
-
-
 
 namespace 
 {
@@ -36,34 +25,65 @@ namespace
         sample_tester()  : psk_dec( 8000 )
             , sample_min( std::numeric_limits<double>::max() )
             , sample_max( std::numeric_limits<double>::min() )
+    		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
-            psk_dec.set_frequency( 2100 );
-            psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::slow );
-            psk_dec.set_afc_limit( 250 );
+            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b63 );
+            psk_dec.set_frequency( 999 );
+            //psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::fast );
+            psk_dec.set_afc_limit( 100 );
+		#if 0
+			wfile = fopen("test.raw","wb");
+			if( !wfile )
+			{
+				printf("Cant open file!!");
+			}
+		#endif
          }
+        ~sample_tester()
+        {
+        	if(wfile) fclose(wfile);
+        }
         int on_new_samples( double *sample, size_t buflen )
         {
-            psk_dec( sample, buflen );
             for( size_t i=0; i<buflen; i++)
             {
-                if( sample[i] > sample_max) sample_max = sample[i];
+                sample[i] *= double(1<<15);
+            	if( sample[i] > sample_max) sample_max = sample[i];
                 if( sample[i] < sample_min ) sample_min = sample[i];
             }
+            psk_dec( sample, buflen );
+            if(wfile)
+                fwrite( sample, sizeof(double), buflen, wfile );
             return 0;
         }
         void on_complete()
         {
-           //printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
+           printf("CURR F %i LEV %i\n", psk_dec.get_frequency(), psk_dec.get_signal_level() );
            std::cout << "Sample min " << sample_min << " Sample max " << sample_max << std::endl;
         }
     private:
        ham::psk::decoder psk_dec;
        double sample_min;
        double sample_max;
+       FILE *wfile;
     };
 }
 
+
+namespace
+{
+	int alloc_samples_array_and_data(uint8_t ***data, int *linesize, int nb_channels,
+	int nb_samples, enum AVSampleFormat sample_fmt, int align)
+	{
+		int nb_planes = av_sample_fmt_is_planar(sample_fmt) ? nb_channels : 1;
+		*data = (uint8_t**)av_malloc(sizeof(*data) * nb_planes);
+		if (!*data)
+			return AVERROR(ENOMEM);
+		return av_samples_alloc(*data, linesize, nb_channels, nb_samples, sample_fmt, align);
+}
+
+
+}
 
 int main(int argc, const char * const *argv )
 {
@@ -147,16 +167,7 @@ int main(int argc, const char * const *argv )
     printf("Sample rate %i\n", pCodecCtx->sample_rate );
     int m_resample_initalized = false;
     int  dst_linesize;
-#if 0
-    FILE *wfile = fopen("test.raw","wb");
-    if( !wfile )
-    {
-    	printf("Cant open file!!");
-    	return -1;
-    }
-#else
-    FILE *wfile = nullptr;
-#endif
+
     while(av_read_frame(pFormatCtx, avpkt)>=0)
     {
         int got_frame = 0;
@@ -214,8 +225,6 @@ int main(int argc, const char * const *argv )
             	}
             	 int dst_bufsize = av_samples_get_buffer_size(&dst_linesize, dst_nb_channels,
             			 ret, dst_sample_fmt, 1);
-            	 if(wfile)
-            		 fwrite( dst_data[0], 1, dst_bufsize, wfile );
             	stester.on_new_samples( reinterpret_cast<double*>(dst_data[0]), dst_bufsize / sizeof(double) );
             	//printf("Processs samples %lu\n", dst_bufsize / sizeof(double));
             }
@@ -229,7 +238,6 @@ int main(int argc, const char * const *argv )
     stester.on_complete();
     free( avpkt );
     free( decoded_frame );
-    if(wfile) fclose(wfile);
     return 0;
 }
 

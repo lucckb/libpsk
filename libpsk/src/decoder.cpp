@@ -10,6 +10,7 @@
 #include <complex>
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -723,8 +724,8 @@ void decoder::set_afc_limit( int limit )
 {
 	if(limit==0) m_afc_on = false;
 	else m_afc_on = true;
-	if(limit==3000) m_afc_on = true;
-	else m_afc_on = false;
+	if(limit==3000) m_fast_afc_mode = true;
+	else m_fast_afc_mode = false;
 	m_afc_limit = (double)limit*PI2/m_sample_freq;
 	// calculate new limits around current receive frequency
 	m_afc_max =  m_nco_phzinc + m_freq_error + m_afc_limit;
@@ -820,16 +821,18 @@ void decoder::reset()
 /* ------------------------------------------------------------------------- */
 void decoder::calc_bit_filter( std::complex<double> samp )
 {
-	std::complex<double> acc1;
-	std::complex<double> acc2;
+	std::complex<double> acc1 {};
+	std::complex<double> acc2 {};
 	m_que3[m_fir3_state] = samp;
 	std::complex<double>* Firptr = m_que3.data();
 	const double* Kptr1 = FreqFirCoef + BITFIR_LENGTH - m_fir3_state;	//frequency error filter
 	const double* Kptr2 = BitFirCoef + BITFIR_LENGTH - m_fir3_state;	//bit data filter
 	for(int j=0; j<	BITFIR_LENGTH;j++)	//do the MACs
 	{
-		acc1 += std::complex<double>((Firptr->real())*(*Kptr1),(Firptr->imag())*(*Kptr1++)  );
-		acc2 += std::complex<double>((Firptr->real())*(*Kptr2), (Firptr++->imag())*(*Kptr2++) );
+		//acc1 += std::complex<double>((Firptr->real())*(*Kptr1),(Firptr->imag())*(*Kptr1++)  );
+		//acc2 += std::complex<double>((Firptr->real())*(*Kptr2), (Firptr++->imag())*(*Kptr2++) );
+		acc1 += (*Firptr) * (*Kptr1++);
+		acc2 += (*Firptr++) * (*Kptr2++);
 	}
 	if( --m_fir3_state < 0)
 		m_fir3_state = BITFIR_LENGTH-1;
@@ -1213,7 +1216,7 @@ bool decoder::symb_sync(std::complex<double> sample)
 					m_clk_err_counter = 0;
 					m_clk_err_timer = 0;
 					//::PostMessage(m_hWnd, MSG_CLKERROR, m_ClkError, m_RxChannel);
-					std::printf("EVENT: MSGCLKERROR %i", m_clk_error);
+					std::printf("EVENT: MSGCLKERROR %i\n", m_clk_error);
 					//TODO report error flag
 				}
 			}
@@ -1230,14 +1233,14 @@ bool decoder::symb_sync(std::complex<double> sample)
 }
 /* ------------------------------------------------------------------------- */
 //Process input sample buffer
-void decoder::operator()( sample_type* samples, std::size_t sample_size )
+void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
 	int j;
 	const double* Kptr;
 	std::complex<double> acc;
 	std::complex<double> * Firptr;
 	double vcophz = m_vco_phz;
-	const int mod16_8 = (m_baudrate!=baudrate::b63)?(16):(8);
+	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
 	if(	m_afc_timer )
 	{
 		if(--m_afc_timer <= 0)
@@ -1255,76 +1258,84 @@ void decoder::operator()( sample_type* samples, std::size_t sample_size )
 			m_afc_capture_on = true;
 		}
 	}
-	for( std::size_t i = 0; i<sample_size; i++ )	// put new samples into Queue
+	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
 		//Generate complex sample by mixing input sample with NCO's sin/cos
-		m_que1[m_fir1_state] = std::complex<double>(samples[i]*cos( vcophz ), samples[i]*sin( vcophz ) );
+		m_que1[m_fir1_state] = std::complex<double>(samples[smpl]*cos( vcophz ), samples[smpl]*sin( vcophz ) );
+		//std::cout << m_que1[m_fir1_state] << " ZZZ " << samples[smpl] << std::endl;
 		vcophz = vcophz + m_nco_phzinc + m_freq_error;
 		if( vcophz > PI2)		//handle 2 Pi wrap around
 			vcophz -= PI2;
-	//decimate by 4 filter
-	if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
-	{
-		acc = std::complex<double>();
-		Firptr = m_que1.data();
-		Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir1_state;
-		for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
+		//decimate by 4 filter
+		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{
-			acc += std::complex<double>( Firptr->real()*(*Kptr), Firptr++->imag()*(*Kptr++) );
-		}
-		m_que2[m_fir2_state] = acc;
-		//1.21 AA6YQ second decimation filter not required for PSK125
-		if( m_baudrate==baudrate::b125 || ((m_sample_cnt%mod16_8) == 0) ) //calc second decimation filter every 8 or 16samples
-		{
-			if (m_baudrate!=baudrate::b125)	//decimate by 4 or 2 filter (PSK31 or PSK63)
+			acc = std::complex<double>();
+			Firptr = m_que1.data();
+			Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir1_state;
+			for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
 			{
-				acc = std::complex<double>();
-				Firptr = m_que2.data();
-				Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir2_state;
-				for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
+				//acc += std::complex<double>( Firptr->real()*(*Kptr), Firptr++->imag()*(*Kptr++) );
+				acc += (*Firptr++) * (*Kptr++);
+			}
+			m_que2[m_fir2_state] = acc;
+			//1.21 AA6YQ second decimation filter not required for PSK125
+			if( m_baudrate==baudrate::b125 || ((m_sample_cnt%mod16_8) == 0) ) //calc second decimation filter every 8 or 16samples
+			{
+				if (m_baudrate!=baudrate::b125)	//decimate by 4 or 2 filter (PSK31 or PSK63)
 				{
-					acc += std::complex<double>((Firptr->real())*(*Kptr), (Firptr++->imag())*(*Kptr++));
+					acc = std::complex<double>();
+					Firptr = m_que2.data();
+					Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir2_state;
+					for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
+					{
+						//acc += std::complex<double>((Firptr->real())*(*Kptr), (Firptr++->imag())*(*Kptr++));
+						acc += (*Firptr++) * ( *Kptr++ );
+					}
 				}
+				// here at Fs/16 == 500.0 Hz or 1000.0 Hz rate with latest sample in acc.
+				// Matched Filter the I and Q data and also a frequency error filter
+				//	filter puts filtered signals in variables m_FreqSignal and m_BitSignal.
+				calc_bit_filter( acc );
+				// Perform AGC operation
+				calc_agc( m_freq_signal );
+				// Calculate frequency error
+				if(m_fast_afc_mode)
+					calc_ffreq_error(m_freq_signal);
+				else
+					calc_freq_error(m_freq_signal);
+				// Bit Timing synchronization
+				if( symb_sync(m_bit_signal) )
+					decode_symb(m_bit_signal);
+				// Calculate IMD if only idles have been received and the energies collected
+				if( m_imd_valid  )
+				{
+					if( m_calc_imd.calc_energies(acc) )
+					{
+						int m_imd_value;
+						if( m_calc_imd.calc_value( m_imd_value ) )  //TODO
+							//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel);
+							//else
+							//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel+0x0080);
+							std::printf("IMD READY %i\n", m_imd_value);
+					}
+				}
+				else
+					m_calc_imd.reset();
 			}
-		// here at Fs/16 == 500.0 Hz or 1000.0 Hz rate with latest sample in acc.
-		// Matched Filter the I and Q data and also a frequency error filter
-		//	filter puts filtered signals in variables m_FreqSignal and m_BitSignal.
-		calc_bit_filter( acc );
-		// Perform AGC operation
-		calc_agc( m_freq_signal );
-		// Calculate frequency error
-		if(m_fast_afc_mode)
-			calc_ffreq_error(m_freq_signal);
-		else
-			calc_freq_error(m_freq_signal);
-	// Bit Timing synchronization
-	if( symb_sync(m_bit_signal) )
-		decode_symb(m_bit_signal);
-	// Calculate IMD if only idles have been received and the energies collected
-	if( m_imd_valid  )
-	{
-		if( m_calc_imd.calc_energies(acc) )
-		{
-			int m_imd_value;
-			if( m_calc_imd.calc_value( m_imd_value ) )  //TODO
-				//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel);
-				//else
-				//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel+0x0080);
-				std::printf("IMD READY %i\n", m_imd_value);
+			if( --m_fir2_state < 0)	//deal with FIR pointer wraparound
+				m_fir2_state = DEC4_LPFIR_LENGTH-1;
 		}
+		if( --m_fir1_state < 0)	//deal with FIR pointer wraparound
+			m_fir1_state = DEC4_LPFIR_LENGTH-1;
 	}
-	else
-		m_calc_imd.reset();
+	m_sample_cnt = m_sample_cnt%16;
+	m_vco_phz = vcophz;
+	m_rx_frequency = int(0.5+((m_nco_phzinc + m_freq_error)*m_sample_freq/PI2 ) );
+	if(0)
+	{
+		using namespace std;
+		cout << "RXF " << m_rx_frequency << " PHZ "<< m_nco_phzinc << " SQLL " << m_agc_ave<< endl;
 	}
-		if( --m_fir2_state < 0)	//deal with FIR pointer wraparound
-			m_fir2_state = DEC4_LPFIR_LENGTH-1;
-			}
-			if( --m_fir1_state < 0)	//deal with FIR pointer wraparound
-				m_fir1_state = DEC4_LPFIR_LENGTH-1;
-	}
-		m_sample_cnt = m_sample_cnt%16;
-		m_vco_phz = vcophz;
-		m_rx_frequency = int(0.5+((m_nco_phzinc + m_freq_error)*m_sample_freq/PI2 ) );
 	//	m_RxFrequency = (INT)(0.5+((m_NCOphzinc)*m_SampleFreq/PI2 ) );
 }
 
