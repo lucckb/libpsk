@@ -715,7 +715,7 @@ void decoder::set_frequency( int freq )
 		if(m_afc_min<=0.0)
 			m_afc_min = 0.0;
 		m_pcnt = 0;
-		m_pcnt = 0;
+		m_ncnt = 0;
 	}
 }
 /* ------------------------------------------------------------------------- */
