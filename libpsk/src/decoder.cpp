@@ -664,7 +664,8 @@ namespace
 }
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
-decoder::decoder( samplerate_type sample_rate ) :
+decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
+	  m_callback(callback ),
 	  m_nco_phzinc( PI2*double(m_rx_frequency)/double(sample_rate) ),
 	  m_afc_limit(50.0*PI2/double(sample_rate) ),
 	  m_sample_freq( sample_rate ), m_nlp_k( NLP_K )
@@ -1040,9 +1041,9 @@ void decoder::decode_symb( std::complex<double> newsamp )
 		if(GotChar && (ch!=0) && m_sq_open )
 		{
 			//::PostMessage(m_hWnd, MSG_PSKCHARRDY, ch, m_RxChannel);
-			std::printf("EVENT: GOT_CHAR %c\n", ch );
+			if( m_callback ) m_callback( cb_rxchar, ch, 0 );
 		}
-		//GotChar = false;
+		GotChar = false;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1215,9 +1216,7 @@ bool decoder::symb_sync(std::complex<double> sample)
 					m_clk_error = m_clk_err_counter*200;	//each count is 200ppm
 					m_clk_err_counter = 0;
 					m_clk_err_timer = 0;
-					//::PostMessage(m_hWnd, MSG_CLKERROR, m_ClkError, m_RxChannel);
-					std::printf("EVENT: MSGCLKERROR %i\n", m_clk_error);
-					//TODO report error flag
+					if( m_callback ) m_callback( cb_clkerror, m_clk_error, 0 );
 				}
 			}
 			else
@@ -1312,11 +1311,14 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 					if( m_calc_imd.calc_energies(acc) )
 					{
 						int m_imd_value;
-						if( m_calc_imd.calc_value( m_imd_value ) )  //TODO
-							//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel);
-							//else
-							//::PostMessage(m_hWnd, MSG_IMDRDY, m_IMDValue, m_RxChannel+0x0080);
-							std::printf("IMD READY %i\n", m_imd_value);
+						if( m_calc_imd.calc_value( m_imd_value ) )
+						{
+							if( m_callback ) m_callback( cb_imdrdy,  m_imd_value, 0 );
+						}
+						else
+						{
+							if( m_callback ) m_callback( cb_imdrdy, m_imd_value, 0x80 );
+						}
 					}
 				}
 				else

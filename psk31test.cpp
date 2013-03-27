@@ -15,14 +15,38 @@ extern "C" {
 }
 #include <limits>
 #include <psk/decoder.hpp>
-
-
+#include <functional>
 namespace 
 {
-    class sample_tester
+
+
+
+	class sample_tester
     {
+   public:
+		void decoder_callback( int event, int param, int param2  )
+		{
+			using namespace ham::psk;
+			using namespace std;
+			switch( event )
+			{
+			case decoder::cb_rxchar:
+				cout << "GOT char " << char(param) << endl;
+				break;
+			case decoder::cb_clkerror:
+				cout << "CLKERR value " << param << endl;
+				break;
+			case decoder::cb_imdrdy:
+				cout << "IMDRDY value " << param << " " << param2 << endl;
+				break;
+			default:
+				cout << "Unknown evt" << endl;
+			}
+		}
     public:
-        sample_tester()  : psk_dec( 8000 )
+        sample_tester()  :
+        	 psk_dec( 8000, std::bind( &sample_tester::decoder_callback,
+        			this, std::placeholders::_1, std::placeholders::_2 , std::placeholders::_3) )
             , sample_min( std::numeric_limits<double>::max() )
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)

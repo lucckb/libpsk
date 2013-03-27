@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <array>
 #include <complex>
+#include <functional>
 #include "imd_calculator.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
@@ -29,6 +30,9 @@ typedef std::array<long, 16> sync_array_type;
 typedef int sqelch_value_type;
 //Sample rate type
 typedef short samplerate_type;
+
+//Event calback type
+typedef std::function< void( int event, int param1, int param2 ) > event_callback_type;
 /* ------------------------------------------------------------------------- */
 class decoder {
 	//Make object noncopyable
@@ -44,7 +48,14 @@ class decoder {
 		double path_distance;	// sum of all metrics for a given survivor path
 		long bit_estimates;		// the bit pattern estimate associated with given survivor path
 	};
+
 public:
+	enum cbevent
+	{
+		cb_rxchar,
+		cb_clkerror,
+		cb_imdrdy
+	};
 	enum class mode
 	{
 		bpsk,			//BPSK
@@ -63,7 +74,7 @@ public:
 		fast
 	};
 	//Construct the decoder object
-	explicit decoder( samplerate_type sample_rate );
+	explicit decoder( samplerate_type sample_rate, event_callback_type  callback );
 	//Process input sample buffer
 	void operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
@@ -114,6 +125,8 @@ private:
 		return m_rx_mode != mode::bpsk;
 	}
 private:
+	//Event handler
+	event_callback_type m_callback;
 	baudrate m_baudrate {  baudrate::b63 };
 	double m_vco_phz {};
 	int m_afc_timer {};
