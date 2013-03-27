@@ -20,7 +20,7 @@ namespace psk {
 
 /* ------------------------------------------------------------------------- */
 //Sample type variable
-typedef double_t sample_type;
+typedef int16_t sample_type;
 //Vector data
 typedef std::array<long, 16> signal_vector_type;
 //Sync vector data

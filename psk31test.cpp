@@ -27,11 +27,11 @@ namespace
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b63 );
-            psk_dec.set_frequency( 999 );
+            psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
+            psk_dec.set_frequency( 2124 );
             //psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 );
-		#if 0
+		#if 1
 			wfile = fopen("test.raw","wb");
 			if( !wfile )
 			{
@@ -43,11 +43,11 @@ namespace
         {
         	if(wfile) fclose(wfile);
         }
-        int on_new_samples( double *sample, size_t buflen )
+        int on_new_samples( int16_t *sample, size_t buflen )
         {
             for( size_t i=0; i<buflen; i++)
             {
-                sample[i] *= double(1<<15);
+                //sample[i] *= double(1<<15);
             	if( sample[i] > sample_max) sample_max = sample[i];
                 if( sample[i] < sample_min ) sample_min = sample[i];
             }
@@ -150,7 +150,7 @@ int main(int argc, const char * const *argv )
     /* set options */
       const int dst_rate = 8000;
       const int dst_nb_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_MONO);
-      AVSampleFormat dst_sample_fmt = AV_SAMPLE_FMT_DBL;
+      AVSampleFormat dst_sample_fmt = AV_SAMPLE_FMT_S16;
       av_opt_set_int(swr_ctx, "in_sample_rate", pCodecCtx->sample_rate, 0);
       av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", pCodecCtx->sample_fmt, 0);
       av_opt_set_int(swr_ctx, "out_channel_layout", AV_CH_LAYOUT_MONO, 0);
@@ -225,7 +225,7 @@ int main(int argc, const char * const *argv )
             	}
             	 int dst_bufsize = av_samples_get_buffer_size(&dst_linesize, dst_nb_channels,
             			 ret, dst_sample_fmt, 1);
-            	stester.on_new_samples( reinterpret_cast<double*>(dst_data[0]), dst_bufsize / sizeof(double) );
+            	stester.on_new_samples( reinterpret_cast<int16_t*>(dst_data[0]), dst_bufsize / sizeof(int16_t) );
             	//printf("Processs samples %lu\n", dst_bufsize / sizeof(double));
             }
         }
