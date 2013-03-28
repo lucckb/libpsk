@@ -8,6 +8,7 @@
 /* ------------------------------------------------------------------------- */
 #include "psk/decoder.hpp"
 #include "psk/varicode.hpp"
+#include "dsp/array_sinus.hpp"
 #include <complex>
 #include <cmath>
 #include <cstdio>
