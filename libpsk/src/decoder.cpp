@@ -408,6 +408,20 @@ namespace
 
 	auto constexpr  AFC_TIMELIMIT =  10;
 	auto constexpr  AFC_FTIMELIMIT = 2;
+
+	constexpr size_t sinarray_size = 512;
+	inline int isinus( short value )
+	{
+		return dsp::integer::trig::sin<short, sinarray_size>( value );
+	}
+	constexpr short isinmax( )
+	{
+		return dsp::integer::trig::sin_arg_max<short, sinarray_size>();
+	}
+	inline int icosinus( short value )
+	{
+		return dsp::integer::trig::sin<short, sinarray_size>( isinmax()/4 + value );
+	}
 }
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
@@ -993,7 +1007,14 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
 		//Generate complex sample by mixing input sample with NCO's sin/cos
-		m_que1[m_fir1_state] = std::complex<double>(samples[smpl]*cos( m_vco_phz ), samples[smpl]*sin( m_vco_phz ) );
+		m_que1[m_fir1_state] = std::complex<double>(
+				//samples[smpl]*cos( m_vco_phz ),
+				//samples[smpl]*sin( m_vco_phz )
+				samples[smpl]*double(icosinus(int((m_vco_phz/PI2) * isinmax()+ 0.5))) / 32767.0,
+				samples[smpl]*double(isinus(int((m_vco_phz/PI2) * isinmax() + 0.5))) / 32767.0
+		);
+		//printf("%i %i %i -> %i %i\n", int((m_vco_phz/PI2) * isinmax()),int(sin( m_vco_phz )*32767), int(cos( m_vco_phz )*32767),
+		//		isinus(int((m_vco_phz/PI2) * isinmax()+ 0.5)), icosinus(int((m_vco_phz/PI2) * isinmax() + 0.5)) );
 		//std::cout << m_que1[m_fir1_state] << " ZZZ " << samples[smpl] << std::endl;
 		m_vco_phz +=  m_nco_phzinc + m_freq_error;
 		if( m_vco_phz > PI2)		//handle 2 Pi wrap around

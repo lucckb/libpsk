@@ -17,7 +17,7 @@ CFLAGS += $(COMMON_FLAGS)
 CFLAGS += -std=gnu99 
 
 #C++ compiler options 
-CXXFLAGS += $(COMMON_FLAGS) -std=c++11
+CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
 
 #LDflags libraries etc.
 LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample
