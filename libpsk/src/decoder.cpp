@@ -971,7 +971,6 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	const double* Kptr;
 	std::complex<double> acc;
 	std::complex<double> * Firptr;
-	double vcophz = m_vco_phz;
 	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
 	if(	m_afc_timer )
 	{
@@ -993,11 +992,11 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
 		//Generate complex sample by mixing input sample with NCO's sin/cos
-		m_que1[m_fir1_state] = std::complex<double>(samples[smpl]*cos( vcophz ), samples[smpl]*sin( vcophz ) );
+		m_que1[m_fir1_state] = std::complex<double>(samples[smpl]*cos( m_vco_phz ), samples[smpl]*sin( m_vco_phz ) );
 		//std::cout << m_que1[m_fir1_state] << " ZZZ " << samples[smpl] << std::endl;
-		vcophz = vcophz + m_nco_phzinc + m_freq_error;
-		if( vcophz > PI2)		//handle 2 Pi wrap around
-			vcophz -= PI2;
+		m_vco_phz +=  m_nco_phzinc + m_freq_error;
+		if( m_vco_phz > PI2)		//handle 2 Pi wrap around
+			m_vco_phz -= PI2;
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{
@@ -1064,7 +1063,6 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 			m_fir1_state = DEC4_LPFIR_LENGTH-1;
 	}
 	m_sample_cnt = m_sample_cnt%16;
-	m_vco_phz = vcophz;
 	m_rx_frequency = int(0.5+((m_nco_phzinc + m_freq_error)*m_sample_freq/PI2 ) );
 	if(0)
 	{
