@@ -52,10 +52,10 @@ namespace
     		, wfile(nullptr)
         {
             psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
-            psk_dec.set_frequency( 2124 );
+            psk_dec.set_frequency( 2122 );
             //psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 );
-		#if 1
+		#if 0
 			wfile = fopen("test.raw","wb");
 			if( !wfile )
 			{
@@ -71,7 +71,6 @@ namespace
         {
             for( size_t i=0; i<buflen; i++)
             {
-                //sample[i] *= double(1<<15);
             	if( sample[i] > sample_max) sample_max = sample[i];
                 if( sample[i] < sample_min ) sample_min = sample[i];
             }

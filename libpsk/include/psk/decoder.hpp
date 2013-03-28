@@ -171,7 +171,6 @@ private:
 	mode m_rx_mode { mode::bpsk };
 	bool m_last_bit_zero {};
 	uint16_t m_bit_acc {};
-	std::array<uint8_t, 2048> m_VaricodeDecTbl;
 	bool m_sq_open {};
 	int m_squelch_speed { 75 };
 	double m_q_freq_error {};
