@@ -18,9 +18,6 @@ extern "C" {
 #include <functional>
 namespace 
 {
-
-
-
 	class sample_tester
     {
    public:
