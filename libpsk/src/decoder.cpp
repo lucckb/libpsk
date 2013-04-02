@@ -409,19 +409,6 @@ namespace
 	auto constexpr  AFC_TIMELIMIT =  10;
 	auto constexpr  AFC_FTIMELIMIT = 2;
 
-	constexpr size_t sinarray_size = 512;
-	inline int isinus( short value )
-	{
-		return dsp::integer::trig::sin<short, sinarray_size>( value );
-	}
-	constexpr short isinmax( )
-	{
-		return dsp::integer::trig::sin_arg_max<short, sinarray_size>();
-	}
-	inline int icosinus( short value )
-	{
-		return dsp::integer::trig::sin<short, sinarray_size>( isinmax()/4 + value );
-	}
 }
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
@@ -1007,15 +994,14 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
 		//Generate complex sample by mixing input sample with NCO's sin/cos
-		m_que1[m_fir1_state] = std::complex<double>(
-				//samples[smpl]*cos( m_vco_phz ),
-				//samples[smpl]*sin( m_vco_phz )
-				(samples[smpl]*icosinus(int((m_vco_phz/PI2) * isinmax()+ 0.5))) >> 15,
-				(samples[smpl]*isinus(int((m_vco_phz/PI2) * isinmax() + 0.5)))  >> 15
-		);
-		m_vco_phz +=  m_nco_phzinc + m_freq_error;
-		if( m_vco_phz > PI2)		//handle 2 Pi wrap around
-			m_vco_phz -= PI2;
+		//m_que1[m_fir1_state] = std::complex<double>(
+		//		(samples[smpl]*icosinus(m_vco_phz)) >> 15,
+		//		(samples[smpl]*isinus(m_vco_phz))  >> 15
+		//);
+		m_que1[m_fir1_state] = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
+		//m_vco_phz +=  ();
+		//if( m_vco_phz > isinmax() )		//handle 2 Pi wrap around
+		//	m_vco_phz -= isinmax();
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{

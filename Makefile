@@ -11,13 +11,15 @@ OPT ?= 2
 #Common flags 
 COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. 
 COMMON_FLAGS += -D__STDC_CONSTANT_MACROS -I./libpsk/include
+#Code profiler
+COMMON_FLAGS += -pg
 
 #C compiler options
 CFLAGS += $(COMMON_FLAGS)
 CFLAGS += -std=gnu99 
 
 #C++ compiler options 
-CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
+CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048 
 
 #LDflags libraries etc.
 LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample

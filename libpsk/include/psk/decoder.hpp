@@ -15,6 +15,7 @@
 #include <complex>
 #include <functional>
 #include "imd_calculator.hpp"
+#include "dsp/nco_mixer.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -127,8 +128,9 @@ private:
 private:
 	//Event handler
 	event_callback_type m_callback;
+	//Numeric controlled oscilator and mixer
+	dsp::nco_mixer<short, int, 15 ,512> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
-	double m_vco_phz {};
 	int m_afc_timer {};
 	bool m_afc_capture_on {};
 	int m_rx_frequency { 1500 };
