@@ -1010,12 +1010,9 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		m_que1[m_fir1_state] = std::complex<double>(
 				//samples[smpl]*cos( m_vco_phz ),
 				//samples[smpl]*sin( m_vco_phz )
-				samples[smpl]*double(icosinus(int((m_vco_phz/PI2) * isinmax()+ 0.5))) / 32767.0,
-				samples[smpl]*double(isinus(int((m_vco_phz/PI2) * isinmax() + 0.5))) / 32767.0
+				(samples[smpl]*icosinus(int((m_vco_phz/PI2) * isinmax()+ 0.5))) >> 15,
+				(samples[smpl]*isinus(int((m_vco_phz/PI2) * isinmax() + 0.5)))  >> 15
 		);
-		//printf("%i %i %i -> %i %i\n", int((m_vco_phz/PI2) * isinmax()),int(sin( m_vco_phz )*32767), int(cos( m_vco_phz )*32767),
-		//		isinus(int((m_vco_phz/PI2) * isinmax()+ 0.5)), icosinus(int((m_vco_phz/PI2) * isinmax() + 0.5)) );
-		//std::cout << m_que1[m_fir1_state] << " ZZZ " << samples[smpl] << std::endl;
 		m_vco_phz +=  m_nco_phzinc + m_freq_error;
 		if( m_vco_phz > PI2)		//handle 2 Pi wrap around
 			m_vco_phz -= PI2;
