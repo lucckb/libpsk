@@ -9,6 +9,7 @@
 #include "psk/decoder.hpp"
 #include "psk/varicode.hpp"
 #include "dsp/array_sinus.hpp"
+#include "dsp/fir_decimate.hpp"
 #include <complex>
 #include <cmath>
 #include <cstdio>
