@@ -1015,6 +1015,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				acc += (*Firptr++) * (*Kptr++);
 			}
 			m_que2[m_fir2_state] = acc;
+            std::cout << "ACC " << acc << std::endl;
 			//1.21 AA6YQ second decimation filter not required for PSK125
 			if( m_baudrate==baudrate::b125 || ((m_sample_cnt%mod16_8) == 0) ) //calc second decimation filter every 8 or 16samples
 			{
