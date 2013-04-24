@@ -16,6 +16,7 @@
 #include <functional>
 #include "imd_calculator.hpp"
 #include "dsp/nco_mixer.hpp"
+#include "dsp/fir_decimate.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -138,11 +139,11 @@ private:
 	double m_afc_limit;
 	double m_afc_max { m_nco_phzinc + m_afc_limit };
 	double m_afc_min { m_nco_phzinc - m_afc_limit };
-	std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que1;
-	std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que2;
+	//std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que1;
+	//std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que2;
 	std::array<std::complex<double>, BITFIR_LENGTH> m_que3;
-	int m_fir1_state;
-	int m_fir2_state;
+	//int m_fir1_state;
+	//int m_fir2_state;
 	int m_fir3_state;
 	std::array<survivor_states, 16> m_survivor_states;
 	std::array<long , 16> m_iq_phase_array;
@@ -190,6 +191,9 @@ private:
 	double m_bit_phase_inc { 16.0 / m_sample_freq };
 	int m_last_pk_pos {};
 	int m_clk_error {};
+    //FIR1
+    dsp::fir_decimate< std::complex<double>, double, DEC4_LPFIR_LENGTH > m_fir1_dec;
+    dsp::fir_decimate< std::complex<double>, double, DEC4_LPFIR_LENGTH > m_fir2_dec;
 };
 
 /* ------------------------------------------------------------------------- */
