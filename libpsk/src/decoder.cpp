@@ -416,7 +416,8 @@ decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_nco_phzinc( PI2*double(m_rx_frequency)/double(sample_rate) ),
 	  m_afc_limit(50.0*PI2/double(sample_rate) ),
 	  m_sample_freq( sample_rate ), m_nlp_k( NLP_K ),
-      m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef )
+      m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
+      m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef )
 {
 	//Initialy reset the decoder
 	reset();
@@ -527,10 +528,10 @@ void decoder::reset()
 	//{
 //		v = std::complex<double>();
 //	}
-	for(auto &v : m_que3)
-	{
-		v = std::complex<double>();
-	}
+	//for(auto &v : m_que3)
+	//{
+	//	v = std::complex<double>();
+	//}
 	for( auto &v : m_survivor_states )
 	{
 		v = survivor_states();
@@ -546,7 +547,7 @@ void decoder::reset()
 	}
 	//m_fir1_state = DEC4_LPFIR_LENGTH-1;	//initialize FIR states
 	//m_fir2_state = DEC4_LPFIR_LENGTH-1;
-	m_fir3_state = BITFIR_LENGTH-1;
+	//m_fir3_state = BITFIR_LENGTH-1;
 	m_sql_level = 10;
 	m_clk_err_counter = 0;
 	m_clk_err_timer = 0;
@@ -559,21 +560,25 @@ void decoder::calc_bit_filter( std::complex<double> samp )
 {
 	std::complex<double> acc1 {};
 	std::complex<double> acc2 {};
-	m_que3[m_fir3_state] = samp;
-	std::complex<double>* Firptr = m_que3.data();
-	const double* Kptr1 = FreqFirCoef + BITFIR_LENGTH - m_fir3_state;	//frequency error filter
-	const double* Kptr2 = BitFirCoef + BITFIR_LENGTH - m_fir3_state;	//bit data filter
-	for(int j=0; j<	BITFIR_LENGTH;j++)	//do the MACs
-	{
+	//m_que3[m_fir3_state] = samp;
+	m_bit_fir( samp );
+	m_freq_fir( samp );
+	//std::complex<double>* Firptr = m_que3.data();
+	//const double* Kptr1 = FreqFirCoef + BITFIR_LENGTH - m_fir3_state;	//frequency error filter
+	//const double* Kptr2 = BitFirCoef + BITFIR_LENGTH - m_fir3_state;	//bit data filter
+	//for(int j=0; j<	BITFIR_LENGTH;j++)	//do the MACs
+	//{
 		//acc1 += std::complex<double>((Firptr->real())*(*Kptr1),(Firptr->imag())*(*Kptr1++)  );
 		//acc2 += std::complex<double>((Firptr->real())*(*Kptr2), (Firptr++->imag())*(*Kptr2++) );
-		acc1 += (*Firptr) * (*Kptr1++);
-		acc2 += (*Firptr++) * (*Kptr2++);
-	}
-	if( --m_fir3_state < 0)
-		m_fir3_state = BITFIR_LENGTH-1;
-	m_freq_signal = acc1;
-	m_bit_signal = acc2;
+		//acc1 += (*Firptr) * (*Kptr1++);
+		//acc2 += (*Firptr++) * (*Kptr2++);
+	//}
+	//if( --m_fir3_state < 0)
+	//	m_fir3_state = BITFIR_LENGTH-1;
+	//m_freq_signal = acc1;
+	//m_bit_signal = acc2;
+	m_freq_signal = m_freq_fir();
+	m_bit_signal = m_bit_fir();
 }
 /* ------------------------------------------------------------------------- */
 void decoder::calc_agc( std::complex<double> samp )
