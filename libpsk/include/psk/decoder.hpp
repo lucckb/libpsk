@@ -193,8 +193,8 @@ private:
     //FIR1 BITFIR_LENGTH
     dsp::fir_decimate< std::complex<short>,  short,  DEC4_LPFIR_LENGTH, std::complex<long> > m_fir1_dec;
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long> > m_fir2_dec;
-    dsp::fir_decimate< std::complex<double>, double, BITFIR_LENGTH> m_bit_fir;
-    dsp::fir_decimate< std::complex<double>, double, BITFIR_LENGTH> m_freq_fir;
+    dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long> > m_bit_fir;
+    dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long> > m_freq_fir;
 };
 
 /* ------------------------------------------------------------------------- */
