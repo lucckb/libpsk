@@ -116,7 +116,6 @@ public:
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
-	void calc_bit_filter( std::complex<double> samp );
 	void calc_agc( std::complex<double> samp );
 	void calc_freq_error( std::complex<double> IQ );
 	void calc_ffreq_error( std::complex<double> IQ );

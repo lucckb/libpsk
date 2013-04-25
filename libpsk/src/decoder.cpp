@@ -557,31 +557,6 @@ void decoder::reset()
 }
 
 /* ------------------------------------------------------------------------- */
-void decoder::calc_bit_filter( std::complex<double> samp )
-{
-	std::complex<double> acc1 {};
-	std::complex<double> acc2 {};
-	//m_que3[m_fir3_state] = samp;
-	m_bit_fir( samp );
-	m_freq_fir( samp );
-	//std::complex<double>* Firptr = m_que3.data();
-	//const double* Kptr1 = FreqFirCoef + BITFIR_LENGTH - m_fir3_state;	//frequency error filter
-	//const double* Kptr2 = BitFirCoef + BITFIR_LENGTH - m_fir3_state;	//bit data filter
-	//for(int j=0; j<	BITFIR_LENGTH;j++)	//do the MACs
-	//{
-		//acc1 += std::complex<double>((Firptr->real())*(*Kptr1),(Firptr->imag())*(*Kptr1++)  );
-		//acc2 += std::complex<double>((Firptr->real())*(*Kptr2), (Firptr++->imag())*(*Kptr2++) );
-		//acc1 += (*Firptr) * (*Kptr1++);
-		//acc2 += (*Firptr++) * (*Kptr2++);
-	//}
-	//if( --m_fir3_state < 0)
-	//	m_fir3_state = BITFIR_LENGTH-1;
-	//m_freq_signal = acc1;
-	//m_bit_signal = acc2;
-	m_freq_signal = m_freq_fir();
-	m_bit_signal = m_bit_fir();
-}
-/* ------------------------------------------------------------------------- */
 void decoder::calc_agc( std::complex<double> samp )
 {
 	double mag = std::sqrt(samp.real()*samp.real() + samp.imag()*samp.imag() );
@@ -1048,7 +1023,11 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				// here at Fs/16 == 500.0 Hz or 1000.0 Hz rate with latest sample in acc.
 				// Matched Filter the I and Q data and also a frequency error filter
 				//	filter puts filtered signals in variables m_FreqSignal and m_BitSignal.
-				calc_bit_filter( filtered_sample );
+            	m_bit_fir( filtered_sample );
+            	m_freq_fir( filtered_sample );
+            	m_freq_signal = m_freq_fir();
+            	m_bit_signal = m_bit_fir();
+
 				// Perform AGC operation
 				calc_agc( m_freq_signal );
 				// Calculate frequency error
