@@ -22,11 +22,11 @@ class agc
 public:
 	void operator()( std::complex<T> sample )
 	{
-		constexpr long K1_F = (1.0-1.0/200.0) * double(SCALE);
-		constexpr long K2_F = (1.0/200.0) * double(SCALE);
-		constexpr long K1_S = (1.0-1.0/500.0) * double(SCALE);
-		constexpr long K2_S = (1.0/500.0) * double(SCALE);
-		long mag = dsp::integer::sqrt(sample.real()*sample.real() + sample.imag()*sample.imag() );
+		constexpr T K1_F = (1.0-1.0/200.0) * double(SCALE);
+		constexpr T K2_F = (1.0/200.0) * double(SCALE);
+		constexpr T K1_S = (1.0-1.0/500.0) * double(SCALE);
+		constexpr T K2_S = (1.0/500.0) * double(SCALE);
+		T mag = dsp::integer::sqrt(sample.real()*sample.real() + sample.imag()*sample.imag() );
 		if( mag > m_agc_ave )
 		{
 			//std::cout << "A";
@@ -46,7 +46,7 @@ public:
 	{
 		if( m_agc_ave>0 && (SCALE/m_agc_ave) > 0)
 		{
-			const long scale = SCALE/m_agc_ave;
+			const auto scale = SCALE/m_agc_ave;
 			return std::complex<T>( v.real()*scale, v.imag()* scale );
 		}
 		else

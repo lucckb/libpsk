@@ -410,11 +410,7 @@ namespace
 	auto constexpr  AFC_FTIMELIMIT = 2;
 
 }
-//Function namespace
-namespace
-{
 
-}
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
