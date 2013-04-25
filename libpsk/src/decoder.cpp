@@ -521,18 +521,6 @@ void decoder::reset()
 {
 	m_fir1_dec.reset();
     m_fir2_dec.reset();
-    //for( auto &v : m_que1 )
-	//{
-///		v = std::complex<double>();
-//	}
-	//for( auto &v : m_que2 )
-	//{
-//		v = std::complex<double>();
-//	}
-	//for(auto &v : m_que3)
-	//{
-	//	v = std::complex<double>();
-	//}
 	for( auto &v : m_survivor_states )
 	{
 		v = survivor_states();
@@ -546,9 +534,6 @@ void decoder::reset()
 		v = 0.0;						// initialize the array
 		viterbi_decode( 3.0*PI2/4.0 );	// init the Viterbi decoder
 	}
-	//m_fir1_state = DEC4_LPFIR_LENGTH-1;	//initialize FIR states
-	//m_fir2_state = DEC4_LPFIR_LENGTH-1;
-	//m_fir3_state = BITFIR_LENGTH-1;
 	m_sql_level = 10;
 	m_clk_err_counter = 0;
 	m_clk_err_timer = 0;
@@ -568,10 +553,6 @@ void decoder::calc_agc( std::complex<double> samp )
 	{
 		m_bit_signal =  std::complex<double>( m_bit_signal.real()/ m_agc_ave , m_bit_signal.imag()/ m_agc_ave);
 		m_freq_signal = std::complex<double>( m_freq_signal.real()/ m_agc_ave , m_freq_signal.imag()/ m_agc_ave);
-		//m_BitSignal.x /= m_AGCave;
-		//m_BitSignal.y /= m_AGCave;
-		//m_FreqSignal.x /= m_AGCave;
-		//m_FreqSignal.y /= m_AGCave;
 	}
 }
 /* ------------------------------------------------------------------------- */
@@ -971,48 +952,19 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	}
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
-		//Generate complex sample by mixing input sample with NCO's sin/cos
-		//m_que1[m_fir1_state] = std::complex<double>(
-		//		(samples[smpl]*icosinus(m_vco_phz)) >> 15,
-		//		(samples[smpl]*isinus(m_vco_phz))  >> 15
-		//);
-		//m_que1[m_fir1_state] = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
         {
           std::complex<short> tmp = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
           m_fir1_dec( tmp );
         }
-		//m_vco_phz +=  ();
-		//if( m_vco_phz > isinmax() )		//handle 2 Pi wrap around
-		//	m_vco_phz -= isinmax();
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{
-			//std::cout << m_fir1_dec() << std::endl;
-			//acc = std::complex<double>();
-			//Firptr = m_que1.data();
-			//Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir1_state;
-			//for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
-			//{
-				//acc += std::complex<double>( Firptr->real()*(*Kptr), Firptr++->imag()*(*Kptr++) );
-			//	acc += (*Firptr++) * (*Kptr++);
-			//}
-			//m_que2[m_fir2_state] = acc;
             //1.21 AA6YQ second decimation filter not required for PSK125
 			if( m_baudrate==baudrate::b125 || ((m_sample_cnt%mod16_8) == 0) ) //calc second decimation filter every 8 or 16samples
 			{
 				std::complex<double> filtered_sample;
                 if (m_baudrate!=baudrate::b125)	//decimate by 4 or 2 filter (PSK31 or PSK63)
 				{
-					/*
-                    acc = std::complex<double>();
-					Firptr = m_que2.data();
-					Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir2_state;
-					for(j=0; j<	DEC4_LPFIR_LENGTH; j++)	//do the MAC's
-					{
-						//acc += std::complex<double>((Firptr->real())*(*Kptr), (Firptr++->imag())*(*Kptr++));
-						acc += (*Firptr++) * ( *Kptr++ );
-					}
-                    */
                     m_fir2_dec ( m_fir1_dec() );
                     filtered_sample =  m_fir2_dec();
 				}
@@ -1057,11 +1009,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				else
 					m_calc_imd.reset();
 			}
-		//	if( --m_fir2_state < 0)	//deal with FIR pointer wraparound
-		//		m_fir2_state = DEC4_LPFIR_LENGTH-1;
 		}
-		//if( --m_fir1_state < 0)	//deal with FIR pointer wraparound
-		//	m_fir1_state = DEC4_LPFIR_LENGTH-1;
 	}
 	m_sample_cnt = m_sample_cnt%16;
 	m_rx_frequency = int(0.5+((m_nco_phzinc + m_freq_error)*m_sample_freq/PI2 ) );
@@ -1070,7 +1018,6 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		using namespace std;
 		cout << "RXF " << m_rx_frequency << " PHZ "<< m_nco_phzinc << " SQLL " << m_agc_ave<< endl;
 	}
-	//	m_RxFrequency = (INT)(0.5+((m_NCOphzinc)*m_SampleFreq/PI2 ) );
 }
 
 /* ------------------------------------------------------------------------- */
