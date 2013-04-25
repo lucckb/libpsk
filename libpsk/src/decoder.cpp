@@ -1004,7 +1004,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		//m_que1[m_fir1_state] = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
         {
           std::complex<short> tmp = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
-          m_fir1_dec(  tmp );
+          m_fir1_dec( tmp );
         }
 		//m_vco_phz +=  ();
 		//if( m_vco_phz > isinmax() )		//handle 2 Pi wrap around
@@ -1012,6 +1012,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{
+			//std::cout << m_fir1_dec() << std::endl;
 			//acc = std::complex<double>();
 			//Firptr = m_que1.data();
 			//Kptr = Dec4LPCoef + DEC4_LPFIR_LENGTH - m_fir1_state;
@@ -1061,7 +1062,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				// Calculate IMD if only idles have been received and the energies collected
 				if( m_imd_valid  )
 				{
-					if( m_calc_imd.calc_energies( filtered_sample) )
+					if( m_calc_imd.calc_energies( filtered_sample ) )
 					{
 						int m_imd_value;
 						if( m_calc_imd.calc_value( m_imd_value ) )
