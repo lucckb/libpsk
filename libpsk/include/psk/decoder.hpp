@@ -17,6 +17,7 @@
 #include "imd_calculator.hpp"
 #include "dsp/nco_mixer.hpp"
 #include "dsp/fir_decimate.hpp"
+#include "agc.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -116,7 +117,6 @@ public:
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
-	void calc_agc( std::complex<double> samp );
 	void calc_freq_error( std::complex<double> IQ );
 	void calc_ffreq_error( std::complex<double> IQ );
 	void decode_symb( std::complex<double> newsamp );
@@ -126,6 +126,7 @@ private:
 		return m_rx_mode != mode::bpsk;
 	}
 private:
+	static constexpr long SCALE = 1<<19;
 	//Event handler
 	event_callback_type m_callback;
 	//Numeric controlled oscilator and mixer
@@ -138,12 +139,6 @@ private:
 	double m_afc_limit;
 	double m_afc_max { m_nco_phzinc + m_afc_limit };
 	double m_afc_min { m_nco_phzinc - m_afc_limit };
-	//std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que1;
-	//std::array<std::complex<double>, DEC4_LPFIR_LENGTH> m_que2;
-	//std::array<std::complex<double>, BITFIR_LENGTH> m_que3;
-	//int m_fir1_state;
-	//int m_fir2_state;
-	//int m_fir3_state;
 	std::array<survivor_states, 16> m_survivor_states;
 	std::array<long , 16> m_iq_phase_array;
 	std::array<double, 21> m_sync_ave;
@@ -153,13 +148,11 @@ private:
 	double m_dev_ave;
 	double m_freq_error {};
 	int m_sample_cnt {};
-	std::complex<double> m_freq_signal;
 	bool m_fast_afc_mode {};
-	std::complex<double> m_bit_signal;
 	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
-	double m_agc_ave {};
+	_internal::agc<SCALE, long> m_agc;
 	bool m_afc_on {};
 	double m_fperr_ave {};
 	double m_fferr_ave {};

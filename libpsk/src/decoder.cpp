@@ -410,6 +410,11 @@ namespace
 	auto constexpr  AFC_FTIMELIMIT = 2;
 
 }
+//Function namespace
+namespace
+{
+
+}
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
@@ -541,20 +546,6 @@ void decoder::reset()
 	m_clk_error = 0;
 }
 
-/* ------------------------------------------------------------------------- */
-void decoder::calc_agc( std::complex<double> samp )
-{
-	double mag = std::sqrt(samp.real()*samp.real() + samp.imag()*samp.imag() );
-	if( mag > m_agc_ave )
-		m_agc_ave = (1.0-1.0/200.0)*m_agc_ave + (1.0/200.0)*mag;
-	else
-		m_agc_ave = (1.0-1.0/500.0)*m_agc_ave + (1.0/500.0)*mag;
-	if( m_agc_ave >= 1.0 )	// divide signal by ave if not almost zero
-	{
-		m_bit_signal =  std::complex<double>( m_bit_signal.real()/ m_agc_ave , m_bit_signal.imag()/ m_agc_ave);
-		m_freq_signal = std::complex<double>( m_freq_signal.real()/ m_agc_ave , m_freq_signal.imag()/ m_agc_ave);
-	}
-}
 /* ------------------------------------------------------------------------- */
 void decoder::calc_freq_error( std::complex<double> IQ )
 {
@@ -690,7 +681,7 @@ void decoder::decode_symb( std::complex<double> newsamp )
 	// first calculate normalized vectors for vector display
 		auto vect = std::complex<double>( m_I1*m_Q0 - m_I0*m_Q1, m_I1*m_I0 + m_Q1*m_Q0 );
 		energy = sqrt(vect.real()*vect.real() + vect.imag()*vect.imag())/1.0E3;
-		if( m_agc_ave > 10.0 )
+		if( m_agc() > 10.0 )
 		{
 			m_iq_phase_array[m_iq_phz_index++] = long(vect.real()/energy);
 			m_iq_phase_array[m_iq_phz_index++] = long(vect.imag()/energy);
@@ -827,7 +818,7 @@ void decoder::calc_quality( double angle )
 	}
 	m_imd_valid = (m_on_count >2);
 
-	if( m_agc_ave > 10.0 )
+	if( m_agc() > 10.0 )
 	{
 		if( is_qpsk() ) //if QPSK
 			m_sql_level = 100 - int(m_dev_ave);
@@ -929,6 +920,15 @@ bool decoder::symb_sync(std::complex<double> sample)
 		return Trigger;
 }
 /* ------------------------------------------------------------------------- */
+
+//TODO: Temporary  cast for test purpose only
+template< typename T>
+	std::complex<double> inline cplxf_cast( std::complex<T> v, int scale = 1 )
+{
+	return std::complex<double>(double(v.real())/double(scale), double(v.imag())/double(scale));
+}
+
+
 //Process input sample buffer
 void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
@@ -977,19 +977,21 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				//	filter puts filtered signals in variables m_FreqSignal and m_BitSignal.
             	m_bit_fir( filtered_sample );
             	m_freq_fir( filtered_sample );
-            	m_freq_signal = m_freq_fir();
-            	m_bit_signal = m_bit_fir();
-
+            	std::complex<long> freq_signal = m_freq_fir();
+            	std::complex<long> bit_signal = m_bit_fir();
 				// Perform AGC operation
-				calc_agc( m_freq_signal );
+            	m_agc( freq_signal );
+            	freq_signal = m_agc.scale( freq_signal );
+            	bit_signal  = m_agc.scale( bit_signal );
+
 				// Calculate frequency error
 				if(m_fast_afc_mode)
-					calc_ffreq_error(m_freq_signal);
+					calc_ffreq_error(cplxf_cast(freq_signal,1<<19));
 				else
-					calc_freq_error(m_freq_signal);
+					calc_freq_error(cplxf_cast(freq_signal,1<<19));
 				// Bit Timing synchronization
-				if( symb_sync(m_bit_signal) )
-					decode_symb(m_bit_signal);
+				if( symb_sync(cplxf_cast(bit_signal,1<<19)) )
+					decode_symb(cplxf_cast(bit_signal,1<<19));
 				// Calculate IMD if only idles have been received and the energies collected
 				if( m_imd_valid  )
 				{
@@ -1016,7 +1018,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	if(0)
 	{
 		using namespace std;
-		cout << "RXF " << m_rx_frequency << " PHZ "<< m_nco_phzinc << " SQLL " << m_agc_ave<< endl;
+		cout << "RXF " << m_rx_frequency << " PHZ "<< m_nco_phzinc << " SQLL " << m_agc()<< endl;
 	}
 }
 
