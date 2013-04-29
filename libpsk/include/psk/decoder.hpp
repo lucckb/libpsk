@@ -117,8 +117,8 @@ public:
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
-	void calc_freq_error( std::complex<double> IQ );
-	void calc_ffreq_error( std::complex<double> IQ );
+	void calc_freq_error( std::complex<long> IQ );
+	void calc_ffreq_error( std::complex<long> IQ );
 	void decode_symb( std::complex<double> newsamp );
 	bool symb_sync(std::complex<double> sample);
 	bool is_qpsk() const
@@ -156,8 +156,8 @@ private:
 	bool m_afc_on {};
 	double m_fperr_ave {};
 	double m_fferr_ave {};
-	std::complex<double> m_z1;
-	std::complex<double> m_z2;
+	std::complex<long> m_z1;
+	std::complex<long> m_z2;
 	double m_I0 {};		// 4 stage I/Q delay line variables
 	double m_I1 {};
 	double m_Q0 {};

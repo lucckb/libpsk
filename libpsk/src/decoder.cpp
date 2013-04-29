@@ -461,6 +461,7 @@ void decoder::set_afc_limit( int limit )
 {
 	if(limit==0) m_afc_on = false;
 	else m_afc_on = true;
+	if( !m_afc_on ) m_fperr_ave = 0;
 	if(limit==3000) m_fast_afc_mode = true;
 	else m_fast_afc_mode = false;
 	m_afc_limit = (double)limit*PI2/m_sample_freq;
@@ -543,7 +544,7 @@ void decoder::reset()
 }
 
 /* ------------------------------------------------------------------------- */
-void decoder::calc_freq_error( std::complex<double> IQ )
+void decoder::calc_freq_error( std::complex<long> IQ )
 {
 	constexpr auto P_GN =  0.001;			//AFC constants
 	constexpr auto I_GN = 1.5E-6;
@@ -554,11 +555,11 @@ void decoder::calc_freq_error( std::complex<double> IQ )
 	if( !m_afc_on )
 	{
 		m_fferr_ave = 0.0;
-		m_fperr_ave = 0.0;
 		m_freq_error = 0.0;
 		return;
 	}
 	double ferror = (IQ.real() - m_z2.real()) * m_z1.imag() - (IQ.imag() - m_z2.imag()) * m_z1.real();
+	ferror /= double(SCALE*SCALE);
 	m_z2 = m_z1;
 	m_z1 = IQ;
 	// error at this point is abt .02 per Hz error
@@ -585,20 +586,10 @@ void decoder::calc_freq_error( std::complex<double> IQ )
 		m_freq_error = ferror*P_GN;
 	}
 
-	//clamp frequency within range
-	if( (m_nco_phzinc+m_freq_error) > m_afc_max )
-	{
-		m_nco_phzinc = m_afc_max;
-		m_freq_error = 0.0;
-	}
-	else if( (m_nco_phzinc+m_freq_error) < m_afc_min )
-	{
-		m_nco_phzinc = m_afc_min;
-		m_freq_error = 0.0;
-	}
+
 }
 /* ------------------------------------------------------------------------- */
-void decoder::calc_ffreq_error( std::complex<double> IQ )
+void decoder::calc_ffreq_error( std::complex<long> IQ )
 {
 	constexpr auto FP_GN = 0.008;
 	constexpr auto FI_GN = 3.0E-5;
@@ -609,11 +600,11 @@ void decoder::calc_ffreq_error( std::complex<double> IQ )
 	if(!m_afc_on)
 	{
 		m_fferr_ave = 0.0;
-		m_fperr_ave = 0.0;
 		m_freq_error = 0.0;
 		return;
 	}
 	double ferror = (IQ.real() - m_z2.real()) * m_z1.imag() - (IQ.imag() - m_z2.imag()) * m_z1.real();
+	ferror /= double(SCALE*SCALE);
 	m_z2 = m_z1;
 	m_z1 = IQ;
 	// error at this point is abt .02 per Hz error
@@ -637,17 +628,6 @@ void decoder::calc_ffreq_error( std::complex<double> IQ )
 		if( (ferror > 0.3) || (ferror < -0.3 ) )
 			m_nco_phzinc = m_nco_phzinc + (ferror*FI_GN);
 		m_freq_error = ferror*FP_GN;
-	}
-	//clamp frequency within range
-	if( (m_nco_phzinc+m_freq_error) > m_afc_max )
-	{
-		m_nco_phzinc = m_afc_max;
-		m_freq_error = 0.0;
-	}
-	else if( (m_nco_phzinc+m_freq_error) < m_afc_min )
-	{
-		m_nco_phzinc = m_afc_min;
-		m_freq_error = 0.0;
 	}
 }
 /* ------------------------------------------------------------------------- */
@@ -841,8 +821,15 @@ void decoder::calc_quality( double angle )
 		if( m_q_freq_error < -1.0 )
 			m_q_freq_error = -1.0;
 	}
-	m_fperr_ave = (1.0-1.0/m_nlp_k)*m_fperr_ave +
+	if( m_afc_on )
+	{
+		m_fperr_ave = (1.0-1.0/m_nlp_k)*m_fperr_ave +
 					( (1.0*PHZDERIVED_GN)/m_nlp_k)*m_q_freq_error;
+	}
+	else
+	{
+		m_fperr_ave = 0;
+	}
 }
 /* ------------------------------------------------------------------------- */
 bool decoder::symb_sync(std::complex<double> sample)
@@ -982,9 +969,28 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 
 				// Calculate frequency error
 				if(m_fast_afc_mode)
-					calc_ffreq_error(cplxf_cast(freq_signal,1<<19));
+					calc_ffreq_error(freq_signal);
 				else
-					calc_freq_error(cplxf_cast(freq_signal,1<<19));
+					calc_freq_error(freq_signal);
+
+				//clamp frequency within range
+				if( (m_nco_phzinc+m_freq_error) > m_afc_max )
+				{
+						m_nco_phzinc = m_afc_max;
+						m_freq_error = 0.0;
+				}
+				else if( (m_nco_phzinc+m_freq_error) < m_afc_min )
+				{
+					m_nco_phzinc = m_afc_min;
+					m_freq_error = 0.0;
+				}
+				if(0)
+				{
+						using namespace std;
+						cout << "NS: " <<samples[smpl]  << " nco_phz_inc: " << m_nco_phzinc << " m_freq_err: " << m_freq_error
+								<< " m_fferr_ave: " << m_fferr_ave
+								<< " m_fperr_ave: "<< m_fperr_ave << endl;
+				}
 				// Bit Timing synchronization
 				if( symb_sync(cplxf_cast(bit_signal,1<<19)) )
 					decode_symb(cplxf_cast(bit_signal,1<<19));
