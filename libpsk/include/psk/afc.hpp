@@ -25,6 +25,7 @@ public:
 	{
 
 	}
+
 private:
 	//FAST AFC mode
 	void calc_ffreq_error( std::complex<T> IQ,  T angle_error )
