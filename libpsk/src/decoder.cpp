@@ -546,89 +546,13 @@ void decoder::reset()
 /* ------------------------------------------------------------------------- */
 void decoder::calc_freq_error( std::complex<long> IQ )
 {
-	constexpr auto P_GN =  0.001;			//AFC constants
-	constexpr auto I_GN = 1.5E-6;
-	constexpr auto P_CGN = 0.0004;
-	constexpr auto I_CGN = 3.0E-6;
-	constexpr auto WIDE_GN = 1.0/.02;			//gain to make error in Hz
-	constexpr auto WLP_K = 200.0;
-	if( !m_afc_on )
-	{
-		m_fferr_ave = 0.0;
-		m_freq_error = 0.0;
-		return;
-	}
-	double ferror = (IQ.real() - m_z2.real()) * m_z1.imag() - (IQ.imag() - m_z2.imag()) * m_z1.real();
-	ferror /= double(SCALE*SCALE);
-	m_z2 = m_z1;
-	m_z1 = IQ;
-	// error at this point is abt .02 per Hz error
-	if( ferror > .30 )		//clamp range
-		ferror = .30;
-	if( ferror < -.30 )
-		ferror = -.30;
-	m_fferr_ave = (1.0-1.0/WLP_K)*m_fferr_ave + ((1.0*WIDE_GN)/WLP_K)*ferror;
-	if( m_afc_capture_on)
-	{
-		ferror=m_fferr_ave;
-		if( (ferror > 0.3) || (ferror < -0.3 ) )
-			m_nco_phzinc = m_nco_phzinc + (ferror*I_CGN);
-		m_freq_error = ferror*P_CGN;
-	}
-	else
-	{
-		if( (m_fferr_ave*m_fperr_ave)>0.0)	//make sure both errors agree
-			ferror = m_fperr_ave;
-		else
-			ferror = 0.0;
-		if( (ferror > 0.3) || (ferror < -0.3 ) )
-			m_nco_phzinc = m_nco_phzinc + (ferror*I_GN);
-		m_freq_error = ferror*P_GN;
-	}
 
 
 }
 /* ------------------------------------------------------------------------- */
 void decoder::calc_ffreq_error( std::complex<long> IQ )
 {
-	constexpr auto FP_GN = 0.008;
-	constexpr auto FI_GN = 3.0E-5;
-	constexpr auto FP_CGN = 0.002;
-	constexpr auto FI_CGN = 1.50E-5;
-	constexpr auto FWIDE_GN = 1.0/.02;		//gain to make error in Hz
-	constexpr auto FWLP_K = 300.0;
-	if(!m_afc_on)
-	{
-		m_fferr_ave = 0.0;
-		m_freq_error = 0.0;
-		return;
-	}
-	double ferror = (IQ.real() - m_z2.real()) * m_z1.imag() - (IQ.imag() - m_z2.imag()) * m_z1.real();
-	ferror /= double(SCALE*SCALE);
-	m_z2 = m_z1;
-	m_z1 = IQ;
-	// error at this point is abt .02 per Hz error
-	if( ferror > .30 )		//clamp range
-		ferror = .30;
-	if( ferror < -.30 )
-		ferror = -.30;
-	m_fferr_ave = (1.0-1.0/FWLP_K)*m_fferr_ave + ((1.0*FWIDE_GN)/FWLP_K)*ferror;
-	ferror=m_fferr_ave;
-	if( (ferror > 6.0) || (ferror < -6.0 ) )
-	{
-		m_nco_phzinc = m_nco_phzinc + (ferror*FI_CGN);
-		m_freq_error = ferror*FP_CGN;
-	}
-	else
-	{
-		if( (m_fferr_ave*m_fperr_ave)>0.0)	//make sure both errors agree
-			ferror = m_fperr_ave;
-		else
-			ferror = 0.0;
-		if( (ferror > 0.3) || (ferror < -0.3 ) )
-			m_nco_phzinc = m_nco_phzinc + (ferror*FI_GN);
-		m_freq_error = ferror*FP_GN;
-	}
+
 }
 /* ------------------------------------------------------------------------- */
 void decoder::decode_symb( std::complex<double> newsamp )
@@ -916,23 +840,7 @@ template< typename T>
 void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
 	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
-	if(	m_afc_timer )
-	{
-		if(--m_afc_timer <= 0)
-		{
-			m_afc_timer = 0;
-			m_afc_capture_on = false;
-			// calculate new limits around latest receive frequency
-			m_afc_max =  m_nco_phzinc + m_afc_limit;
-			m_afc_min =  m_nco_phzinc - m_afc_limit;
-			if(m_afc_min<=0.0)
-				m_afc_min = 0.0;
-		}
-		else
-		{
-			m_afc_capture_on = true;
-		}
-	}
+	m_afc.handle_sample_timer();
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
         {

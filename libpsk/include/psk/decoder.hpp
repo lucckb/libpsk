@@ -18,6 +18,7 @@
 #include "dsp/nco_mixer.hpp"
 #include "dsp/fir_decimate.hpp"
 #include "agc.hpp"
+#include "afc.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -132,13 +133,8 @@ private:
 	//Numeric controlled oscilator and mixer
 	dsp::nco_mixer<short, int ,512> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
-	int m_afc_timer {};
-	bool m_afc_capture_on {};
 	int m_rx_frequency { 1500 };
 	double m_nco_phzinc;
-	double m_afc_limit;
-	double m_afc_max { m_nco_phzinc + m_afc_limit };
-	double m_afc_min { m_nco_phzinc - m_afc_limit };
 	std::array<survivor_states, 16> m_survivor_states;
 	std::array<long , 16> m_iq_phase_array;
 	std::array<double, 21> m_sync_ave;
@@ -146,18 +142,15 @@ private:
 	int m_clk_err_counter;
 	int m_clk_err_timer;
 	double m_dev_ave;
-	double m_freq_error {};
 	int m_sample_cnt {};
 	bool m_fast_afc_mode {};
 	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
-	_internal::agc<SCALE, long> m_agc;
-	bool m_afc_on {};
 	double m_fperr_ave {};
-	double m_fferr_ave {};
-	std::complex<long> m_z1;
-	std::complex<long> m_z2;
+	_internal::agc<SCALE, long> m_agc;
+	_internal::afc<SCALE, long> m_afc;
+
 	double m_I0 {};		// 4 stage I/Q delay line variables
 	double m_I1 {};
 	double m_Q0 {};
