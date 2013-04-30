@@ -406,9 +406,6 @@ namespace
 	    7,	// 15
 	};
 
-	auto constexpr  AFC_TIMELIMIT =  10;
-	auto constexpr  AFC_FTIMELIMIT = 2;
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -416,8 +413,9 @@ namespace
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_callback(callback ),
 	  m_nco_phzinc( PI2*double(m_rx_frequency)/double(sample_rate) ),
-	  m_afc_limit(50.0*PI2/double(sample_rate) ),
-	  m_sample_freq( sample_rate ), m_nlp_k( NLP_K ),
+	  m_sample_freq( sample_rate ),
+	  m_afc(m_nco_phzinc, 50.0*PI2/double(sample_rate) ),
+	  m_nlp_k( NLP_K ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
       m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef )
 {
@@ -440,36 +438,21 @@ void decoder::set_frequency( int freq )
 	{
 		m_rx_frequency = freq;
 		m_nco_phzinc = PI2*(double)freq/m_sample_freq;
-		m_fferr_ave = 0.0;
 		m_fperr_ave = 0.0;
-		if(m_fast_afc_mode)
-			m_afc_timer = AFC_FTIMELIMIT;
-		else
-			m_afc_timer = AFC_TIMELIMIT;
-	// calculate new limits around new receive frequency
-		m_afc_max =  m_nco_phzinc + m_afc_limit;
-		m_afc_min =  m_nco_phzinc - m_afc_limit;
-		if(m_afc_min<=0.0)
-			m_afc_min = 0.0;
 		m_pcnt = 0;
 		m_ncnt = 0;
+		m_afc.reset( m_nco_phzinc );
 	}
 }
 /* ------------------------------------------------------------------------- */
 //Set AFC limit
 void decoder::set_afc_limit( int limit )
 {
-	if(limit==0) m_afc_on = false;
-	else m_afc_on = true;
-	if( !m_afc_on ) m_fperr_ave = 0;
-	if(limit==3000) m_fast_afc_mode = true;
-	else m_fast_afc_mode = false;
-	m_afc_limit = (double)limit*PI2/m_sample_freq;
-	// calculate new limits around current receive frequency
-	m_afc_max =  m_nco_phzinc + m_freq_error + m_afc_limit;
-	m_afc_min =  m_nco_phzinc + m_freq_error - m_afc_limit;
-	if(m_afc_min<=0.0) m_afc_min = 0.0;
-	if(m_fast_afc_mode)  m_nlp_k = FNLP_K;
+
+	//No frequency control
+	if( limit == 0 ) m_fperr_ave = 0;
+	m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
+	if(m_afc.is_fast())  m_nlp_k = FNLP_K;
 	else m_nlp_k = NLP_K;
 }
 /* ------------------------------------------------------------------------- */
@@ -543,17 +526,6 @@ void decoder::reset()
 	m_clk_error = 0;
 }
 
-/* ------------------------------------------------------------------------- */
-void decoder::calc_freq_error( std::complex<long> IQ )
-{
-
-
-}
-/* ------------------------------------------------------------------------- */
-void decoder::calc_ffreq_error( std::complex<long> IQ )
-{
-
-}
 /* ------------------------------------------------------------------------- */
 void decoder::decode_symb( std::complex<double> newsamp )
 {
@@ -745,7 +717,7 @@ void decoder::calc_quality( double angle )
 		if( m_q_freq_error < -1.0 )
 			m_q_freq_error = -1.0;
 	}
-	if( m_afc_on )
+	if( m_afc.is_enabled() )
 	{
 		m_fperr_ave = (1.0-1.0/m_nlp_k)*m_fperr_ave +
 					( (1.0*PHZDERIVED_GN)/m_nlp_k)*m_q_freq_error;
@@ -840,11 +812,11 @@ template< typename T>
 void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
 	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
-	m_afc.handle_sample_timer();
+	m_afc.handle_sample_timer( m_nco_phzinc );
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
         {
-          std::complex<short> tmp = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_freq_error)/PI2 *double( m_nco_mix.max_angle() ) );
+          std::complex<short> tmp = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_afc.get_freq_error())/PI2 *double( m_nco_mix.max_angle() ) );
           m_fir1_dec( tmp );
         }
 		//decimate by 4 filter
@@ -875,30 +847,9 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             	freq_signal = m_agc.scale( freq_signal );
             	bit_signal  = m_agc.scale( bit_signal );
 
-				// Calculate frequency error
-				if(m_fast_afc_mode)
-					calc_ffreq_error(freq_signal);
-				else
-					calc_freq_error(freq_signal);
+            	//Perform AFC operation
+            	m_nco_phzinc = m_afc( freq_signal, m_fperr_ave, m_nco_phzinc);
 
-				//clamp frequency within range
-				if( (m_nco_phzinc+m_freq_error) > m_afc_max )
-				{
-						m_nco_phzinc = m_afc_max;
-						m_freq_error = 0.0;
-				}
-				else if( (m_nco_phzinc+m_freq_error) < m_afc_min )
-				{
-					m_nco_phzinc = m_afc_min;
-					m_freq_error = 0.0;
-				}
-				if(0)
-				{
-						using namespace std;
-						cout << "NS: " <<samples[smpl]  << " nco_phz_inc: " << m_nco_phzinc << " m_freq_err: " << m_freq_error
-								<< " m_fferr_ave: " << m_fferr_ave
-								<< " m_fperr_ave: "<< m_fperr_ave << endl;
-				}
 				// Bit Timing synchronization
 				if( symb_sync(cplxf_cast(bit_signal,1<<19)) )
 					decode_symb(cplxf_cast(bit_signal,1<<19));
@@ -924,7 +875,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		}
 	}
 	m_sample_cnt = m_sample_cnt%16;
-	m_rx_frequency = int(0.5+((m_nco_phzinc + m_freq_error)*m_sample_freq/PI2 ) );
+	m_rx_frequency = int(0.5+((m_nco_phzinc + m_afc.get_freq_error())*m_sample_freq/PI2 ) );
 	if(0)
 	{
 		using namespace std;

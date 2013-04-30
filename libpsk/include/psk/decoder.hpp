@@ -118,8 +118,6 @@ public:
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
-	void calc_freq_error( std::complex<long> IQ );
-	void calc_ffreq_error( std::complex<long> IQ );
 	void decode_symb( std::complex<double> newsamp );
 	bool symb_sync(std::complex<double> sample);
 	bool is_qpsk() const
@@ -143,7 +141,6 @@ private:
 	int m_clk_err_timer;
 	double m_dev_ave;
 	int m_sample_cnt {};
-	bool m_fast_afc_mode {};
 	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
