@@ -18,9 +18,14 @@ namespace _internal {
 /* ------------------------------------------------------------------------- */
 class agc
 {
-private:
 	static constexpr double SCALE = 1<<15;
+	//Make object noncopyable
+	agc(const agc&) = delete;
+	agc& operator=(const agc&) = delete;
 public:
+	//Default constructor
+	agc() {}
+	//Operator for do AGC
 	void operator()( std::complex<int> sample )
 	{
 		constexpr int K1_F = (1.0-1.0/200.0) * SCALE + 0.5;
@@ -37,10 +42,12 @@ public:
 			m_agc_ave = (K1_S*m_agc_ave + K2_S*mag)/SCALE;
 		}
 	}
+	//Get AGC value
 	int operator()() const
 	{
 		return m_agc_ave;
 	}
+	//Scale to the AGC value
 	std::complex<int> scale( std::complex<int> v )
 	{
 		if( m_agc_ave>0 && (SCALE/m_agc_ave) > 0)

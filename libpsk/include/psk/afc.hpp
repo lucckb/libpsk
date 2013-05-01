@@ -11,12 +11,13 @@
 #include <complex>
 #include <utility>
 #include <stdio.h>
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
 namespace _internal {
 /* ------------------------------------------------------------------------- */
-template<long SCALE, typename T>
+/*Automatic frequency control class */
 class afc
 {
 private:
@@ -79,7 +80,7 @@ public:
 		}
 	}
 	/** Return PHZINC and freq error */
-	double operator()( std::complex<T> IQ, double angle_error, double phz_inc )
+	double operator()( std::complex<int> IQ, double angle_error, double phz_inc )
 	{
 		if(!m_afc_on)
 		{
@@ -88,7 +89,7 @@ public:
 			return phz_inc;
 		}
 		double ferror = (IQ.real() - m_z2.real()) * m_z1.imag() - (IQ.imag() - m_z2.imag()) * m_z1.real();
-		ferror /= double(SCALE*SCALE);
+		ferror /= double(1<<30);
 		//printf("FERRORS: %f ANGLE %f ", ferror, angle_error);
 		m_z2 = m_z1;
 		m_z1 = IQ;
@@ -196,6 +197,10 @@ private:
 		}
 		return phz_inc;
 	}
+private:
+	//Make object noncopyable
+	afc(const afc&) = delete;
+	afc& operator=(const afc&) = delete;
 private:
 	int m_afc_timer {};
 	bool m_afc_capture_on {};

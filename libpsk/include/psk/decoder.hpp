@@ -146,7 +146,7 @@ private:
 	double m_sample_freq;
 	double m_fperr_ave {};
 	_internal::agc m_agc;
-	_internal::afc<SCALE, long> m_afc;
+	_internal::afc m_afc;
 
 	double m_I0 {};		// 4 stage I/Q delay line variables
 	double m_I1 {};

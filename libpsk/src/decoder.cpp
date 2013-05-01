@@ -876,11 +876,6 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	}
 	m_sample_cnt = m_sample_cnt%16;
 	m_rx_frequency = int(0.5+((m_nco_phzinc + m_afc.get_freq_error())*m_sample_freq/PI2 ) );
-	if(0)
-	{
-		using namespace std;
-		cout << "RXF " << m_rx_frequency << " PHZ "<< m_nco_phzinc << " SQLL " << m_agc()<< endl;
-	}
 }
 
 /* ------------------------------------------------------------------------- */
