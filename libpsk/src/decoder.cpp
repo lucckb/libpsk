@@ -851,8 +851,8 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             	m_nco_phzinc = m_afc( freq_signal, m_fperr_ave, m_nco_phzinc);
 
 				// Bit Timing synchronization
-				if( symb_sync(cplxf_cast(bit_signal,1<<19)) )
-					decode_symb(cplxf_cast(bit_signal,1<<19));
+				if( symb_sync(cplxf_cast(bit_signal,SCALE)) )
+					decode_symb(cplxf_cast(bit_signal,SCALE));
 				// Calculate IMD if only idles have been received and the energies collected
 				if( m_imd_valid  )
 				{

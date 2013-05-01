@@ -108,8 +108,8 @@ public:
 			phz_inc = m_afc_min;
 			m_freq_error = 0.0;
 		}
-		//if( m_freq_error != 0)
-		//printf("MAIN: phz_inc: %f  m_freq_error: %f fferave %f\n", phz_inc, m_freq_error, m_fferr_ave);
+		if( 0 && m_freq_error != 0)
+			printf("MAIN: phz_inc: %f  m_freq_error: %f fferave %f\n", phz_inc, m_freq_error, m_fferr_ave);
 		return phz_inc;
 	}
 	//Get frequency error

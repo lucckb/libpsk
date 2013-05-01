@@ -125,7 +125,7 @@ private:
 		return m_rx_mode != mode::bpsk;
 	}
 private:
-	static constexpr long SCALE = 1<<19;
+	static constexpr long SCALE = 1<<15;
 	//Event handler
 	event_callback_type m_callback;
 	//Numeric controlled oscilator and mixer
@@ -145,7 +145,7 @@ private:
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
 	double m_fperr_ave {};
-	_internal::agc<SCALE, long> m_agc;
+	_internal::agc m_agc;
 	_internal::afc<SCALE, long> m_afc;
 
 	double m_I0 {};		// 4 stage I/Q delay line variables
