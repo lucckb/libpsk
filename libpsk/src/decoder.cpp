@@ -33,8 +33,6 @@ namespace
 	// phase wraparound correction tables for viterbi decoder
 	constexpr double ANGLE_TBL1[] = { 3.0*PI2/4.0, 0.0, PI2/4.0, PI2/2.0 };
 	constexpr double ANGLE_TBL2[] = { 3.0*PI2/4.0, PI2, PI2/4.0, PI2/2.0 };
-	constexpr auto NLP_K = 100.0;		//narrow phase derived afc constans
-	constexpr auto FNLP_K = 30.0;
 	constexpr auto Ts = .032+.00000;			// Ts == symbol period
 	// Lookup table to get symbol from non-inverted data stream
 	static constexpr unsigned char ConvolutionCodeTable[] =
@@ -412,10 +410,9 @@ namespace
 //Construct the decoder object
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_callback(callback ),
-	  m_nco_phzinc( PI2*double(m_rx_frequency)/double(sample_rate) ),
+	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
 	  m_sample_freq( sample_rate ),
-	  m_afc(m_nco_phzinc, 50.0*PI2/double(sample_rate) ),
-	  m_nlp_k( NLP_K ),
+	  m_afc(m_nco_phzinc, 50.0*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
       m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef )
 {
@@ -437,8 +434,7 @@ void decoder::set_frequency( int freq )
 	if( freq != m_rx_frequency)
 	{
 		m_rx_frequency = freq;
-		m_nco_phzinc = PI2*(double)freq/m_sample_freq;
-		m_fperr_ave = 0.0;
+		m_nco_phzinc = (PI2I*freq)/m_sample_freq;
 		m_pcnt = 0;
 		m_ncnt = 0;
 		m_afc.reset( m_nco_phzinc );
@@ -448,12 +444,7 @@ void decoder::set_frequency( int freq )
 //Set AFC limit
 void decoder::set_afc_limit( int limit )
 {
-
-	//No frequency control
-	if( limit == 0 ) m_fperr_ave = 0;
 	m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
-	if(m_afc.is_fast())  m_nlp_k = FNLP_K;
-	else m_nlp_k = NLP_K;
 }
 /* ------------------------------------------------------------------------- */
 //Viterbi decode
@@ -601,7 +592,6 @@ void decoder::decode_symb( std::complex<double> newsamp )
 		//FIXME this
 		if(GotChar && (ch!=0) && m_sq_open )
 		{
-			//::PostMessage(m_hWnd, MSG_PSKCHARRDY, ch, m_RxChannel);
 			if( m_callback ) m_callback( cb_rxchar, ch, 0 );
 		}
 		GotChar = false;
@@ -611,7 +601,6 @@ void decoder::decode_symb( std::complex<double> newsamp )
 void decoder::calc_quality( double angle )
 {
 	constexpr auto ELIMIT = 5;
-	constexpr auto PHZDERIVED_GN =  1.0/.2;		//gain to make error in Hz
 	double temp;
 	double SqTimeK =  double(m_squelch_speed);
 	if( (is_qpsk() && ((angle >= PHZ_180_QMIN) && (angle <= PHZ_180_QMAX) ) ) ||
@@ -717,15 +706,7 @@ void decoder::calc_quality( double angle )
 		if( m_q_freq_error < -1.0 )
 			m_q_freq_error = -1.0;
 	}
-	if( m_afc.is_enabled() )
-	{
-		m_fperr_ave = (1.0-1.0/m_nlp_k)*m_fperr_ave +
-					( (1.0*PHZDERIVED_GN)/m_nlp_k)*m_q_freq_error;
-	}
-	else
-	{
-		m_fperr_ave = 0;
-	}
+	m_afc.update_angle_error( m_q_freq_error );
 }
 /* ------------------------------------------------------------------------- */
 bool decoder::symb_sync(std::complex<double> sample)
@@ -816,7 +797,9 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
         {
-          std::complex<short> tmp = m_nco_mix(  samples[smpl], (m_nco_phzinc + m_afc.get_freq_error())/PI2 *double( m_nco_mix.max_angle() ) );
+        	std::complex<short> tmp = m_nco_mix( samples[smpl],
+        		 ((m_nco_phzinc + m_afc.get_freq_error()) *  m_nco_mix.max_angle())/PI2I
+        		);
           m_fir1_dec( tmp );
         }
 		//decimate by 4 filter
@@ -848,7 +831,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             	bit_signal  = m_agc.scale( bit_signal );
 
             	//Perform AFC operation
-            	m_nco_phzinc = m_afc( freq_signal, m_fperr_ave, m_nco_phzinc);
+            	m_nco_phzinc = m_afc( freq_signal, m_nco_phzinc);
 
 				// Bit Timing synchronization
 				if( symb_sync(cplxf_cast(bit_signal,SCALE)) )
@@ -875,7 +858,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 		}
 	}
 	m_sample_cnt = m_sample_cnt%16;
-	m_rx_frequency = int(0.5+((m_nco_phzinc + m_afc.get_freq_error())*m_sample_freq/PI2 ) );
+	m_rx_frequency = ((m_nco_phzinc + m_afc.get_freq_error())*m_sample_freq)/PI2I;
 }
 
 /* ------------------------------------------------------------------------- */

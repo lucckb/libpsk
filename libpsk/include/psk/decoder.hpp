@@ -44,6 +44,8 @@ class decoder {
 	decoder& operator=(const decoder&) = delete;
 	static constexpr auto DEC4_LPFIR_LENGTH = 35;
 	static constexpr auto BITFIR_LENGTH = 65;
+	static constexpr int SCALE = 1<<15;
+	static constexpr int PI2I = 1<<15;
 	//Survivor states in decoder
 	struct survivor_states
 	{
@@ -125,14 +127,13 @@ private:
 		return m_rx_mode != mode::bpsk;
 	}
 private:
-	static constexpr long SCALE = 1<<15;
 	//Event handler
 	event_callback_type m_callback;
 	//Numeric controlled oscilator and mixer
 	dsp::nco_mixer<short, int ,512> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
 	int m_rx_frequency { 1500 };
-	double m_nco_phzinc;
+	int m_nco_phzinc;
 	std::array<survivor_states, 16> m_survivor_states;
 	std::array<long , 16> m_iq_phase_array;
 	std::array<double, 21> m_sync_ave;
@@ -144,7 +145,6 @@ private:
 	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
-	double m_fperr_ave {};
 	_internal::agc m_agc;
 	_internal::afc m_afc;
 
@@ -164,7 +164,6 @@ private:
 	int m_pcnt {};
 	int m_ncnt {};
 	int m_sq_thresh { 50 };
-	double m_nlp_k;
 	int m_bit_pos {};
 	int m_pk_pos {};
 	int m_new_pk_pos { 5 };
