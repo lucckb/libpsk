@@ -392,7 +392,7 @@ namespace
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_callback(callback ),
 	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
-      m_sync( std::bind( callback, decoder::cb_clkerror, std::placeholders::_1, 0) ),
+      m_sync(  std::bind( callback, decoder::cb_clkerror, std::placeholders::_1, 0) ),
 	  m_sample_freq( sample_rate ),
 	  m_afc(m_nco_phzinc, 50.0*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
@@ -705,12 +705,9 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	m_afc.handle_sample_timer( m_nco_phzinc );
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
-        {
-        	std::complex<short> tmp = m_nco_mix( samples[smpl],
-        		 ((m_nco_phzinc + m_afc.get_freq_error()) *  m_nco_mix.max_angle())/PI2I
-        		);
-          m_fir1_dec( tmp );
-        }
+        m_fir1_dec(
+        	m_nco_mix( samples[smpl], m_nco_phzinc + m_afc.get_freq_error() )
+        );
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples
 		{
