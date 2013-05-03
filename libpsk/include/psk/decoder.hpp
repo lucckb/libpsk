@@ -129,7 +129,7 @@ private:
 	//Event handler
 	event_callback_type m_callback;
 	//Numeric controlled oscillator and mixer
-	dsp::nco_mixer<short, int ,512> m_nco_mix;
+	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
 	int m_rx_frequency { 1500 };
 	int m_nco_phzinc;
