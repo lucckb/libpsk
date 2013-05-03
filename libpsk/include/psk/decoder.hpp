@@ -30,7 +30,7 @@ typedef int16_t sample_type;
 //Vector data
 typedef std::array<long, 16> signal_vector_type;
 //Sync vector data
-typedef std::array<long, 16> sync_array_type;
+typedef std::array<unsigned int, 16> sync_array_type;
 //Squelch tresh type
 typedef int sqelch_value_type;
 //Sample rate type

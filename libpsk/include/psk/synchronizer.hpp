@@ -12,6 +12,11 @@
 #include <complex>
 #include <array>
 #include <functional>
+#include <limits>
+#include "dsp/dsp_basic_ops.hpp"
+//TODO: Temporary
+#include <iostream>
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -42,10 +47,11 @@ private:
 			    6,	// 14
 			    7,	// 15
 	};
+	static constexpr auto PHZ_SCALE = 1<<15;
 public:
 	//Constructor
 	symbol_synchronizer( int sample_freq, std::function< void(int param1)> callback )
-		: m_bit_phase_inc( 16.0 / sample_freq ), m_callback(callback)
+		: m_bit_phase_inc( 16.0*PHZ_SCALE / sample_freq ), m_callback(callback)
 	{}
 	//Reset the decoder
 	void reset()
@@ -55,50 +61,58 @@ public:
 		m_clk_err_timer = 0;
 		m_clk_error = 0;
 	}
-	const std::array<long, 16>& get_sync_data() const
+	const std::array<unsigned int, 16>& get_sync_data() const
 	{
 		return m_sync_array;
 	}
 	///Synchronize symbol data
-	bool operator()( std::complex<int> s, bool sq_open )
+	bool operator()( std::complex<int> sample, bool sq_open )
 	{
+		constexpr auto SMPL_SCALE = 1<<15;
+		constexpr auto ENERGY_SCALE = SMPL_SCALE * 2;
+		constexpr int Ts = .032 * PHZ_SCALE + 0.5;			// Ts == symbol period
 
-		//TEMPORARY ONLY
-		std::complex<double> sample = std::complex<double>( (double)s.real()/(1<<15), (double)s.imag()/(1<<15) );
-		constexpr auto Ts = .032+.00000;			// Ts == symbol period
-		bool Trigger=false;
-		double max;
-		double energy;
-		int BitPos = m_bit_pos;
-		if(BitPos<16)
+		bool trigger=false;
+		unsigned int max, energy;
+		int bit_pos = m_bit_pos;
+		if(bit_pos<16)
 		{
-			energy = (sample.real()*sample.real()) + (sample.imag()*sample.imag());
-			if( energy > 4.0)		//wait for AGC to settle down
-				energy = 1.0;
-			m_sync_ave[BitPos] = (1.0-1.0/82.0)*m_sync_ave[BitPos] + (1.0/82.0)*energy;
-			if( BitPos == m_pk_pos )	// see if at middle of symbol
+			//TODO: Add saturate from DSP
 			{
-				Trigger = true;
-				m_sync_array[m_pk_pos] = int(900.0*m_sync_ave[m_pk_pos]);
+				using namespace dsp::cpu;
+				const auto r2 = static_cast<unsigned int>(saturated_cast<short>(sample.real())) *
+								static_cast<unsigned int>(saturated_cast<short>(sample.real()));
+				const auto i2 = static_cast<unsigned int>(saturated_cast<short>(sample.imag())) *
+						        static_cast<unsigned int>(saturated_cast<short>(sample.imag()));
+				energy = r2/SMPL_SCALE + i2/SMPL_SCALE;
+			}
+			//if( energy > 4 * ENERGY_SCALE)		//wait for AGC to settle down
+			//	energy = ENERGY_SCALE;
+			m_sync_ave[bit_pos] = m_sync_ave[bit_pos] - m_sync_ave[bit_pos]/82 + energy/82;
+
+			if( bit_pos == m_pk_pos )	// see if at middle of symbol
+			{
+				trigger = true;
+				//TODO: Fixme later???
+				m_sync_array[m_pk_pos] = (900*m_sync_ave[m_pk_pos])/ENERGY_SCALE;
 			}
 			else
 			{
-				Trigger = false;
-				m_sync_array[BitPos] = int(750.0*m_sync_ave[BitPos]);
+				trigger = false;
+				m_sync_array[bit_pos] = (750*m_sync_ave[bit_pos])/ENERGY_SCALE;
 			}
-			if( BitPos == HALF_TBL[m_new_pk_pos] )	//don't change pk pos until
+			if( bit_pos == HALF_TBL[m_new_pk_pos] )	//don't change pk pos until
 				m_pk_pos = m_new_pk_pos;			// halfway into next bit.
-			BitPos++;
+			bit_pos++;
 		}
-
 		m_bit_phase_pos += m_bit_phase_inc;
 		if( m_bit_phase_pos >= Ts )
 		{									// here every symbol time
-			m_bit_phase_pos = std::fmod(m_bit_phase_pos, Ts);	//keep phase bounded
-			if((BitPos==15) && (m_pk_pos==15))	//if missed the 15 bin before rollover
-				Trigger = true;
-			BitPos = 0;
-			max = -1e10;
+			m_bit_phase_pos = m_bit_phase_pos % Ts;	//keep phase bounded
+			if((bit_pos==15) && (m_pk_pos==15))	//if missed the 15 bin before rollover
+				trigger = true;
+			bit_pos = 0;
+			max = std::numeric_limits<decltype(max)>::min();
 			for( int i=0; i<16; i++)		//find maximum energy pk
 			{
 				energy = m_sync_ave[i];
@@ -108,7 +122,7 @@ public:
 					max = energy;
 				}
 			}
-			if(sq_open)
+			if( sq_open )
 			{
 				if( m_pk_pos == m_last_pk_pos+1 )	//calculate clock error
 					m_clk_err_counter++;
@@ -132,17 +146,17 @@ public:
 			}
 			m_last_pk_pos = m_pk_pos;
 		}
-		m_bit_pos = BitPos;
-		return Trigger;
+		m_bit_pos = bit_pos;
+		return trigger;
 	}
 private:
 	int m_bit_pos {};
-	std::array<double, 21> m_sync_ave {{}};
+	std::array<unsigned int, 16> m_sync_ave {{}};
 	int m_pk_pos {};
-	std::array<long, 16> m_sync_array {{}};
+	std::array<unsigned int, 16> m_sync_array {{}};
 	int m_new_pk_pos { 5 };
-	double m_bit_phase_pos {};
-	double m_bit_phase_inc;
+	int m_bit_phase_pos {};
+	const int m_bit_phase_inc;
 	int m_last_pk_pos {};
 	int m_clk_err_counter {};
 	int m_clk_err_timer {};
