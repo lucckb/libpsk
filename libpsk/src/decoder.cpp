@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -33,7 +34,7 @@ namespace
 	// phase wraparound correction tables for viterbi decoder
 	constexpr double ANGLE_TBL1[] = { 3.0*PI2/4.0, 0.0, PI2/4.0, PI2/2.0 };
 	constexpr double ANGLE_TBL2[] = { 3.0*PI2/4.0, PI2, PI2/4.0, PI2/2.0 };
-	constexpr auto Ts = .032+.00000;			// Ts == symbol period
+
 	// Lookup table to get symbol from non-inverted data stream
 	static constexpr unsigned char ConvolutionCodeTable[] =
 	{
@@ -384,26 +385,6 @@ namespace
 	short( 4.3453566e-005 * SMUL + 0.5)
 	};
 
-
-	constexpr int HALF_TBL[] = {
-	    7,	// 0
-	   8,	// 1
-	   9,	// 2
-	   10,	// 3
-	   11,	// 4
-	   12,	// 5
-	   13,	// 6
-	   14,	// 7
-	    0,	// 8
-	    1,	// 9
-	    2,	// 10
-	    3,	// 11
-	    4,	// 12
-	    5,	// 13
-	    6,	// 14
-	    7,	// 15
-	};
-
 }
 
 /* ------------------------------------------------------------------------- */
@@ -411,6 +392,7 @@ namespace
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_callback(callback ),
 	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
+      m_sync( sample_rate, std::bind( callback, decoder::cb_clkerror, std::placeholders::_1, 0) ),
 	  m_sample_freq( sample_rate ),
 	  m_afc(m_nco_phzinc, 50.0*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
@@ -505,16 +487,13 @@ void decoder::reset()
 	{
 		v = 1;
 	}
-	for( auto &v : m_sync_ave )
+	for( int i=0; i<21; i++ )
 	{
-		v = 0.0;						// initialize the array
 		viterbi_decode( 3.0*PI2/4.0 );	// init the Viterbi decoder
 	}
+	m_sync.reset();
 	m_sql_level = 10;
-	m_clk_err_counter = 0;
-	m_clk_err_timer = 0;
 	m_dev_ave = 90.0;
-	m_clk_error = 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -708,77 +687,7 @@ void decoder::calc_quality( double angle )
 	}
 	m_afc.update_angle_error( m_q_freq_error );
 }
-/* ------------------------------------------------------------------------- */
-bool decoder::symb_sync(std::complex<double> sample)
-{
-	bool Trigger=false;
-	double max;
-	double energy;
-	int BitPos = m_bit_pos;
-	if(BitPos<16)
-	{
-		energy = (sample.real()*sample.real()) + (sample.imag()*sample.imag());
-		if( energy > 4.0)		//wait for AGC to settle down
-			energy = 1.0;
-		m_sync_ave[BitPos] = (1.0-1.0/82.0)*m_sync_ave[BitPos] + (1.0/82.0)*energy;
-		if( BitPos == m_pk_pos )	// see if at middle of symbol
-		{
-			Trigger = true;
-			m_sync_array[m_pk_pos] = int(900.0*m_sync_ave[m_pk_pos]);
-		}
-		else
-		{
-			Trigger = false;
-			m_sync_array[BitPos] = int(750.0*m_sync_ave[BitPos]);
-		}
-		if( BitPos == HALF_TBL[m_new_pk_pos] )	//don't change pk pos until
-			m_pk_pos = m_new_pk_pos;			// halfway into next bit.
-		BitPos++;
-	}
 
-		m_bit_phase_pos += ( m_bit_phase_inc);
-		if( m_bit_phase_pos >= Ts )
-		{									// here every symbol time
-			m_bit_phase_pos = std::fmod(m_bit_phase_pos, Ts);	//keep phase bounded
-			if((BitPos==15) && (m_pk_pos==15))	//if missed the 15 bin before rollover
-				Trigger = true;
-			BitPos = 0;
-			max = -1e10;
-			for( int i=0; i<16; i++)		//find maximum energy pk
-			{
-				energy = m_sync_ave[i];
-				if( energy > max )
-				{
-					m_new_pk_pos = i;
-					max = energy;
-				}
-			}
-			if(m_sq_open)
-			{
-				if( m_pk_pos == m_last_pk_pos+1 )	//calculate clock error
-					m_clk_err_counter++;
-				else
-					if( m_pk_pos == m_last_pk_pos-1 )
-						m_clk_err_counter--;
-				if( m_clk_err_timer++ > 313 )	// every 10 seconds sample clk drift
-				{
-					m_clk_error = m_clk_err_counter*200;	//each count is 200ppm
-					m_clk_err_counter = 0;
-					m_clk_err_timer = 0;
-					if( m_callback ) m_callback( cb_clkerror, m_clk_error, 0 );
-				}
-			}
-			else
-			{
-				m_clk_error = 0;
-				m_clk_err_counter = 0;
-				m_clk_err_timer = 0;
-			}
-			m_last_pk_pos = m_pk_pos;
-		}
-		m_bit_pos = BitPos;
-		return Trigger;
-}
 /* ------------------------------------------------------------------------- */
 
 //TODO: Temporary  cast for test purpose only
@@ -832,9 +741,8 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 
             	//Perform AFC operation
             	m_nco_phzinc = m_afc( freq_signal, m_nco_phzinc);
-
 				// Bit Timing synchronization
-				if( symb_sync(cplxf_cast(bit_signal,SCALE)) )
+				if( m_sync(bit_signal, m_sq_open) )
 					decode_symb(cplxf_cast(bit_signal,SCALE));
 				// Calculate IMD if only idles have been received and the energies collected
 				if( m_imd_valid  )

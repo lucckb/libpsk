@@ -19,6 +19,7 @@
 #include "dsp/fir_decimate.hpp"
 #include "agc.hpp"
 #include "afc.hpp"
+#include "synchronizer.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -34,7 +35,7 @@ typedef std::array<long, 16> sync_array_type;
 typedef int sqelch_value_type;
 //Sample rate type
 typedef short samplerate_type;
-
+/* ------------------------------------------------------------------------- */
 //Event calback type
 typedef std::function< void( int event, int param1, int param2 ) > event_callback_type;
 /* ------------------------------------------------------------------------- */
@@ -88,11 +89,6 @@ public:
 	{
 		return m_iq_phase_array;
 	}
-	//Get sync array type
-	sync_array_type get_sync_data() const
-	{
-		return m_sync_array;
-	}
 	//Reset decoder
 	void reset();
 	//Set receive frequency
@@ -115,13 +111,16 @@ public:
 	{
 		return m_sql_level>0?m_sql_level:0;
 	}
+	const sync_array_type& get_sync_data() const
+	{
+		return m_sync.get_sync_data();
+	}
 	//Set squelch tresh
 	void set_squelch_tresh( sqelch_value_type tresh, squelch_mode mode );
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
 	void decode_symb( std::complex<double> newsamp );
-	bool symb_sync(std::complex<double> sample);
 	bool is_qpsk() const
 	{
 		return m_rx_mode != mode::bpsk;
@@ -129,17 +128,15 @@ private:
 private:
 	//Event handler
 	event_callback_type m_callback;
-	//Numeric controlled oscilator and mixer
+	//Numeric controlled oscillator and mixer
 	dsp::nco_mixer<short, int ,512> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
 	int m_rx_frequency { 1500 };
 	int m_nco_phzinc;
 	std::array<survivor_states, 16> m_survivor_states;
 	std::array<long , 16> m_iq_phase_array;
-	std::array<double, 21> m_sync_ave;
+	_internal::symbol_synchronizer m_sync;
 	int m_sql_level;
-	int m_clk_err_counter;
-	int m_clk_err_timer;
 	double m_dev_ave;
 	int m_sample_cnt {};
 	bool m_imd_valid {};
@@ -164,16 +161,8 @@ private:
 	int m_pcnt {};
 	int m_ncnt {};
 	int m_sq_thresh { 50 };
-	int m_bit_pos {};
-	int m_pk_pos {};
-	int m_new_pk_pos { 5 };
-	std::array<long, 16> m_sync_array;
-	double m_bit_phase_pos {};
-	double m_bit_phase_inc { 16.0 / m_sample_freq };
-	int m_last_pk_pos {};
-	int m_clk_error {};
     //FIR1 BITFIR_LENGTH
-    dsp::fir_decimate< std::complex<short>,  short,  DEC4_LPFIR_LENGTH, std::complex<long> > m_fir1_dec;
+    dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH, std::complex<long> > m_fir1_dec;
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long> > m_fir2_dec;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long> > m_bit_fir;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long> > m_freq_fir;
