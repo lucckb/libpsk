@@ -50,8 +50,8 @@ private:
 	static constexpr auto PHZ_SCALE = 1<<15;
 public:
 	//Constructor
-	symbol_synchronizer( int sample_freq, std::function< void(int param1)> callback )
-		: m_bit_phase_inc( 16.0*PHZ_SCALE / sample_freq ), m_callback(callback)
+	symbol_synchronizer( std::function< void(int param1)> callback )
+		:  m_callback(callback)
 	{}
 	//Reset the decoder
 	void reset()
@@ -70,7 +70,7 @@ public:
 	{
 		constexpr auto SMPL_SCALE = 1<<15;
 		constexpr auto ENERGY_SCALE = SMPL_SCALE * 2;
-		constexpr int Ts = .032 * PHZ_SCALE + 0.5;			// Ts == symbol period
+		//constexpr int Ts = .032;
 
 		bool trigger=false;
 		unsigned int max, energy;
@@ -105,10 +105,10 @@ public:
 				m_pk_pos = m_new_pk_pos;			// halfway into next bit.
 			bit_pos++;
 		}
-		m_bit_phase_pos += m_bit_phase_inc;
-		if( m_bit_phase_pos >= Ts )
+		++m_bit_phase_pos;
+		if( m_bit_phase_pos >= 16 )
 		{									// here every symbol time
-			m_bit_phase_pos = m_bit_phase_pos % Ts;	//keep phase bounded
+			m_bit_phase_pos = 0;	//keep phase bounded
 			if((bit_pos==15) && (m_pk_pos==15))	//if missed the 15 bin before rollover
 				trigger = true;
 			bit_pos = 0;
@@ -156,7 +156,6 @@ private:
 	std::array<unsigned int, 16> m_sync_array {{}};
 	int m_new_pk_pos { 5 };
 	int m_bit_phase_pos {};
-	const int m_bit_phase_inc;
 	int m_last_pk_pos {};
 	int m_clk_err_counter {};
 	int m_clk_err_timer {};
