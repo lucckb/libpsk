@@ -110,8 +110,6 @@ public:
 		m_squelch.set_tresh( tresh, mode );
 	}
 private:
-	void calc_quality( double angle );
-	bool viterbi_decode( double newangle );
 	void decode_symb( std::complex<int> newsamp );
 	bool is_qpsk() const
 	{

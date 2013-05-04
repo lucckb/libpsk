@@ -430,7 +430,12 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	//Successive fix it
 	int angle_int = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
 	double angle = angle_int / double(_internal::diff_angle_calc::SCALE );
-	calc_quality( angle );
+	{
+		//Calc quality
+		auto freq_error = m_squelch( angle, m_agc(), is_qpsk(),
+		    	m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
+		 m_afc.update_angle_error( freq_error );
+	}
 	if(m_rx_mode == mode::bpsk)
 	{
 		//calc BPSK symbol over 2 chips
@@ -470,17 +475,8 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	GotChar = false;
 }
 
-/* ------------------------------------------------------------------------- */
-void decoder::calc_quality( double angle )
-{
-    auto freq_error = m_squelch( angle, m_agc(), is_qpsk(),
-    		m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
-	m_afc.update_angle_error( freq_error );
-}
 
 /* ------------------------------------------------------------------------- */
-
-
 //Process input sample buffer
 void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {

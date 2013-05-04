@@ -7,6 +7,8 @@
 
 #ifndef PSK_SQUELCH_HPP_
 #define PSK_SQUELCH_HPP_
+/* ------------------------------------------------------------------------- */
+#include "diff_angle_calc.hpp"
 
 /* ------------------------------------------------------------------------- */
 namespace ham {
@@ -29,6 +31,7 @@ class squelch
 	//Make object noncopyable
 	squelch(const squelch&) = delete;
 	squelch& operator=(const squelch&) = delete;
+	static constexpr auto SCALE = diff_angle_calc::SCALE;
 	static constexpr auto PI2 = 8.0 * std::atan(1.0);
 	static constexpr auto PHZ_180_QMIN	= PI2/8.0;		// Pi/4
 	static constexpr auto PHZ_180_QMAX	= 3.0*PI2/8.0;	// 3Pi/4
