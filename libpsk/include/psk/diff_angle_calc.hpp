@@ -40,7 +40,6 @@ public:
 	{
 		static constexpr auto PHZ_SCALE = 1<<9;
 		constexpr int C_PI_S = 4.0 * std::atan(1.0) * SCALE;
-		double angle;
 		m_I1 = m_I0;		//form the multi delayed symbol samples
 		m_Q1 = m_Q0;
 		//m_I0 = newsamp.real();
@@ -62,7 +61,7 @@ public:
 		auto vect = std::complex<int>( (m_I1*m_Q0)/SCALE - (m_I0*m_Q1)/SCALE, (m_I1*m_I0)/SCALE + (m_Q1*m_Q0)/SCALE );
 		auto energy = dsp::integer::sqrt( unsigned(vect.real()*vect.real()) + unsigned(vect.imag()*vect.imag()));
 		//TODO: fixme this
-		if( agc_value > 10 )
+		if( agc_value > 10 && energy>0)
 		{
 			m_iq_phase_array[m_iq_phz_index++] = ((vect.real())/energy)/PHZ_SCALE;
 			m_iq_phase_array[m_iq_phz_index++] = ((vect.imag())/energy)/PHZ_SCALE;
@@ -73,6 +72,7 @@ public:
 			m_iq_phase_array[m_iq_phz_index++] = 2;
 		}
 		m_iq_phz_index &= 0x000F;		//mod 16 index
+		int angle;
 		if(is_qpsk_lsb)
 			angle = (C_PI_S) + dsp::integer::atan2<int,SCALE>( vect.imag(), -vect.real()); //QPSK lower sideband;
 		else
