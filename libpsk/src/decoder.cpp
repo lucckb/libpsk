@@ -40,18 +40,8 @@ namespace
 	constexpr auto PHZ_180_BMAX = PI2/2.0;		// Pi
 	constexpr auto PHZ_0_BMIN	= PI2/2.0;			// Pi
 	constexpr auto PHZ_0_BMAX	= PI2;
-	// phase wraparound correction tables for viterbi decoder
-	constexpr double ANGLE_TBL1[] = { 3.0*PI2/4.0, 0.0, PI2/4.0, PI2/2.0 };
-	constexpr double ANGLE_TBL2[] = { 3.0*PI2/4.0, PI2, PI2/4.0, PI2/2.0 };
 
-	// Lookup table to get symbol from non-inverted data stream
-	static constexpr unsigned char ConvolutionCodeTable[] =
-	{
-		2, 1, 3, 0, 3, 0, 2, 1,
-		0, 3, 1, 2, 1, 2, 0, 3,
-		1, 2, 0, 3, 0, 3, 1, 2,
-		3, 0, 2, 1, 2, 1, 3, 0
-	};
+
     constexpr double SMUL = std::numeric_limits<short>::max();
 	constexpr short Dec4LPCoef[ ] = {
 	 short(-0.00021203644 * SMUL + 0.5),
@@ -437,65 +427,14 @@ void decoder::set_afc_limit( int limit )
 {
 	m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
 }
-/* ------------------------------------------------------------------------- */
-//Viterbi decode
-bool decoder::viterbi_decode( double newangle )
-{
-	double pathdist[32];
-	double min;
-	int bitestimates[32];
-	int ones;
-	const double* pAngleTbl;
-	min = 1.0e100;		// make sure can find a minimum value
-	if( newangle >= PI2/2 )		//deal with ambiguity at +/- 2PI
-		pAngleTbl = ANGLE_TBL2;	// by using two different tables
-	else
-		pAngleTbl = ANGLE_TBL1;
-	for(int i = 0; i < 32; i++)		// calculate all possible distances
-	{							//lsb of 'i' is newest bit estimate
-		pathdist[i] = m_survivor_states[i / 2].path_distance +
-				std::abs(newangle - pAngleTbl[ ConvolutionCodeTable[i] ]);
-		if(pathdist[i] < min)	// keep track of minimum distance
-			min = pathdist[i];
-		// shift in newest bit estimates
-		bitestimates[i] = ((m_survivor_states[i / 2].bit_estimates) << 1) + (i & 1);
-	}
-	for(int i = 0; i < 16; i++)	//compare path lengths with the same end state
-							// and keep only the smallest path in m_SurvivorStates[].
-	{
-		if(pathdist[i] < pathdist[16 + i])
-		{
-			m_survivor_states[i].path_distance = pathdist[i] - min;
-			m_survivor_states[i].bit_estimates = bitestimates[i];
-		}
-		else
-		{
-			m_survivor_states[i].path_distance = pathdist[16 + i] - min;
-			m_survivor_states[i].bit_estimates = bitestimates[16 + i];
-		}
-	}
-	ones = 0;
-	for(int i = 0; i < 16; i++)		// find if more ones than zeros at bit 20 position
-		ones += (m_survivor_states[i].bit_estimates&(1L << 20));
-	if( ones == (8L << 20 ) )
-		return ( rand() & 0x1000 );	//if a tie then guess
-	else
-		return(ones > (8L << 20) );	//else return most likely bit value
-}
+
 /* ------------------------------------------------------------------------- */
 //Reset decoder
 void decoder::reset()
 {
 	m_fir1_dec.reset();
     m_fir2_dec.reset();
-	for( auto &v : m_survivor_states )
-	{
-		v = survivor_states();
-	}
-	for( int i=0; i<21; i++ )
-	{
-		viterbi_decode( 3.0*PI2/4.0 );	// init the Viterbi decoder
-	}
+    m_viterbi_decoder.reset();
 	m_sync.reset();
 	m_angle_calc.reset();
 	m_sql_level = 10;
@@ -505,49 +444,50 @@ void decoder::reset()
 /* ------------------------------------------------------------------------- */
 void decoder::decode_symb( std::complex<int> newsamp )
 {
-
 	uint8_t ch = 0;
 	bool bit;
 	bool GotChar = false;
 	//Successive fix it
-	double angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl )/
-			double(_internal::diff_angle_calc::SCALE);
+	int angle_int = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
+	double angle = angle_int / double(_internal::diff_angle_calc::SCALE);
 	calc_quality( angle );
-		if(m_rx_mode == mode::bpsk)
+	if(m_rx_mode == mode::bpsk)
+	{
+		//calc BPSK symbol over 2 chips
+		//vect.imag( m_angle_calc.get_energy() );
+		bit = bool(m_angle_calc.get_energy() > 0.0);
+	}
+	else
+	{
+		bit = m_viterbi_decoder( angle_int );
+	}
+	if( (bit==0) && m_last_bit_zero )	//if character delimiter
+	{
+		if(m_bit_acc != 0 )
 		{
-			//calc BPSK symbol over 2 chips
-			//vect.imag( m_angle_calc.get_energy() );
-			bit = bool(m_angle_calc.get_energy() > 0.0);
+			constexpr _internal::varicode v;
+			m_bit_acc >>= 2;				//get rid of last zero and one
+			m_bit_acc &= 0x07FF;
+			ch = v.reverse(m_bit_acc);
+			m_bit_acc = 0;
+			GotChar = true;
 		}
+	}
+	else
+	{
+		m_bit_acc <<= 1;
+		m_bit_acc |= bit;
+		if(bit==0)
+			m_last_bit_zero = true;
 		else
-			bit = viterbi_decode( angle );
-		if( (bit==0) && m_last_bit_zero )	//if character delimiter
-		{
-			if(m_bit_acc != 0 )
-			{
-				constexpr _internal::varicode v;
-				m_bit_acc >>= 2;				//get rid of last zero and one
-				m_bit_acc &= 0x07FF;
-				ch = v.reverse(m_bit_acc);
-				m_bit_acc = 0;
-				GotChar = true;
-			}
-		}
-		else
-		{
-			m_bit_acc <<= 1;
-			m_bit_acc |= bit;
-			if(bit==0)
-				m_last_bit_zero = true;
-			else
-				m_last_bit_zero = false;
-		}
-		//FIXME this
-		if(GotChar && (ch!=0) && m_sq_open )
-		{
-			if( m_callback ) m_callback( cb_rxchar, ch, 0 );
-		}
-		GotChar = false;
+			m_last_bit_zero = false;
+	}
+	//FIXME this
+	if(GotChar && (ch!=0) && m_sq_open )
+	{
+		if( m_callback ) m_callback( cb_rxchar, ch, 0 );
+	}
+	GotChar = false;
 }
 
 /* ------------------------------------------------------------------------- */

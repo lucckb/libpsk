@@ -21,7 +21,7 @@
 #include "afc.hpp"
 #include "synchronizer.hpp"
 #include "diff_angle_calc.hpp"
-
+#include "viterbi_decoder.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -49,14 +49,6 @@ class decoder {
 	static constexpr auto BITFIR_LENGTH = 65;
 	static constexpr int SCALE = 1<<15;
 	static constexpr int PI2I = 1<<15;
-	//Survivor states in decoder
-	struct survivor_states
-	{
-		survivor_states( double _path_distance = double(), long _bit_estimates = long() )
-			: path_distance(_path_distance),  bit_estimates(_bit_estimates ) {}
-		double path_distance;	// sum of all metrics for a given survivor path
-		long bit_estimates;		// the bit pattern estimate associated with given survivor path
-	};
 
 public:
 	enum cbevent
@@ -135,8 +127,9 @@ private:
 	baudrate m_baudrate {  baudrate::b63 };
 	int m_rx_frequency { 1500 };
 	int m_nco_phzinc;
-	std::array<survivor_states, 16> m_survivor_states;
 	_internal::symbol_synchronizer m_sync;
+	//TODO: FIXME: Temporary viterbi decoder is here
+	_internal::viterbi_decoder m_viterbi_decoder;
 	int m_sql_level;
 	double m_dev_ave;
 	int m_sample_cnt {};
