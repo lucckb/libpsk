@@ -509,7 +509,9 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	uint8_t ch = 0;
 	bool bit;
 	bool GotChar = false;
-	auto angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
+	//Successive fix it
+	double angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl )/
+			double(_internal::diff_angle_calc::SCALE);
 	calc_quality( angle );
 		if(m_rx_mode == mode::bpsk)
 		{

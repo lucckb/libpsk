@@ -23,6 +23,8 @@ namespace _internal {
 class diff_angle_calc
 {
 public:
+	//SCALE for the angle
+	static constexpr auto SCALE = 1<<15;
 	//Reset difference angle decoder
 	void reset()
 	{
@@ -34,11 +36,10 @@ public:
 		m_Q1 = 0;
 	}
 	//Calculate difference angle
-	double operator()( std::complex<int> newsamp, int agc_value, bool is_qpsk_lsb )
+	int operator()( std::complex<int> newsamp, int agc_value, bool is_qpsk_lsb )
 	{
-		static constexpr auto SCALE = 1<<15;
 		static constexpr auto PHZ_SCALE = 1<<9;
-		constexpr auto PI2 = 8.0 * std::atan(1.0);
+		constexpr int C_PI_S = 4.0 * std::atan(1.0) * SCALE;
 		double angle;
 		m_I1 = m_I0;		//form the multi delayed symbol samples
 		m_Q1 = m_Q0;
@@ -73,13 +74,13 @@ public:
 		}
 		m_iq_phz_index &= 0x000F;		//mod 16 index
 		if(is_qpsk_lsb)
-			angle = (PI2/2) + dsp::integer::atan2<double,1>( vect.imag(), -vect.real()); //QPSK lower sideband;
+			angle = (C_PI_S) + dsp::integer::atan2<int,SCALE>( vect.imag(), -vect.real()); //QPSK lower sideband;
 		else
-			angle = (PI2/2) + dsp::integer::atan2<double,1>( vect.imag(), vect.real()); //QPSK upper sideband or BPSK
+			angle = (C_PI_S) + dsp::integer::atan2<int,SCALE>( vect.imag(), vect.real());  //QPSK upper sideband or BPSK
 		return angle;
 	}
 	//Get last two energies
-	double get_energy() const
+	int get_energy() const
 	{
 		return m_I1 * m_I0 +  m_Q1 * m_Q0;
 	}
