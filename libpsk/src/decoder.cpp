@@ -14,6 +14,15 @@
 #include <iostream>
 #include <iomanip>
 
+
+
+//TODO: Temporary  cast for test purpose only
+template< typename T>
+	std::complex<double> inline cplxf_cast( std::complex<T> v, int scale = 1 )
+{
+	return std::complex<double>(double(v.real())/double(scale), double(v.imag())/double(scale));
+}
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -483,67 +492,30 @@ void decoder::reset()
 	{
 		v = survivor_states();
 	}
-	for( auto &v : m_iq_phase_array )
-	{
-		v = 1;
-	}
 	for( int i=0; i<21; i++ )
 	{
 		viterbi_decode( 3.0*PI2/4.0 );	// init the Viterbi decoder
 	}
 	m_sync.reset();
+	m_angle_calc.reset();
 	m_sql_level = 10;
 	m_dev_ave = 90.0;
 }
 
 /* ------------------------------------------------------------------------- */
-void decoder::decode_symb( std::complex<double> newsamp )
+void decoder::decode_symb( std::complex<int> newsamp )
 {
 
-	double angle;
-	double energy;
 	uint8_t ch = 0;
 	bool bit;
 	bool GotChar = false;
-	m_I1 = m_I0;		//form the multi delayed symbol samples
-	m_Q1 = m_Q0;
-	m_I0 = newsamp.real();
-	m_Q0 = newsamp.imag();
-	// calculate difference angle for QPSK, BPSK, and IQPSK decoding
-	//create vector whose angle is the difference angle by multiplying the
-	// current sample by the complex conjugate of the previous sample.
-	//swap I and Q axis to keep away from  the +/-Pi discontinuity and
-	//  add Pi to make make range from 0 to 2Pi.
-	// 180 deg phase changes center at Pi/4
-	// 0 deg phase changes center at 3Pi/2
-	// +90 deg phase changes center at 2Pi or 0
-	// -90 deg phase changes center at Pi
-	//  if using lower sideband must flip sign of difference angle.
-	//
-	// first calculate normalized vectors for vector display
-		auto vect = std::complex<double>( m_I1*m_Q0 - m_I0*m_Q1, m_I1*m_I0 + m_Q1*m_Q0 );
-		energy = sqrt(vect.real()*vect.real() + vect.imag()*vect.imag())/1.0E3;
-		if( m_agc() > 10.0 )
-		{
-			m_iq_phase_array[m_iq_phz_index++] = long(vect.real()/energy);
-			m_iq_phase_array[m_iq_phz_index++] = long(vect.imag()/energy);
-		}
-		else
-		{
-			m_iq_phase_array[m_iq_phz_index++] = 2;
-			m_iq_phase_array[m_iq_phz_index++] = 2;
-		}
-		m_iq_phz_index &= 0x000F;		//mod 16 index
-		if(m_rx_mode == mode::qpskl)
-			angle = (PI2/2) + atan2( vect.imag(), -vect.real()); //QPSK lower sideband;
-		else
-			angle = (PI2/2) + atan2( vect.imag(), vect.real()); //QPSK upper sideband or BPSK
-		calc_quality( angle );
+	auto angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
+	calc_quality( angle );
 		if(m_rx_mode == mode::bpsk)
 		{
 			//calc BPSK symbol over 2 chips
-			vect.imag(  m_I1 * m_I0 +  m_Q1 * m_Q0 );
-			bit = bool(vect.imag() > 0.0);
+			//vect.imag( m_angle_calc.get_energy() );
+			bit = bool(m_angle_calc.get_energy() > 0.0);
 		}
 		else
 			bit = viterbi_decode( angle );
@@ -690,13 +662,6 @@ void decoder::calc_quality( double angle )
 
 /* ------------------------------------------------------------------------- */
 
-//TODO: Temporary  cast for test purpose only
-template< typename T>
-	std::complex<double> inline cplxf_cast( std::complex<T> v, int scale = 1 )
-{
-	return std::complex<double>(double(v.real())/double(scale), double(v.imag())/double(scale));
-}
-
 
 //Process input sample buffer
 void decoder::operator()( const sample_type* samples, std::size_t sample_size )
@@ -740,9 +705,9 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             	m_nco_phzinc = m_afc( freq_signal, m_nco_phzinc);
 				// Bit Timing synchronization
 				if( m_sync(bit_signal, m_sq_open) )
-					decode_symb(cplxf_cast(bit_signal,SCALE));
+					decode_symb( bit_signal );
 				// Calculate IMD if only idles have been received and the energies collected
-				if( m_imd_valid  )
+				if( m_imd_valid )
 				{
 					if( m_calc_imd.calc_energies( filtered_sample ) )
 					{

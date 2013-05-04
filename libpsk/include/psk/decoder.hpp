@@ -20,6 +20,8 @@
 #include "agc.hpp"
 #include "afc.hpp"
 #include "synchronizer.hpp"
+#include "diff_angle_calc.hpp"
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -28,7 +30,7 @@ namespace psk {
 //Sample type variable
 typedef int16_t sample_type;
 //Vector data
-typedef std::array<long, 16> signal_vector_type;
+typedef std::array<int, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<unsigned int, 16> sync_array_type;
 //Squelch tresh type
@@ -85,9 +87,9 @@ public:
 	//Process input sample buffer
 	void operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
-	signal_vector_type get_vector_data( ) const
+	const signal_vector_type& get_vector_data( ) const
 	{
-		return m_iq_phase_array;
+		return m_angle_calc.get_iq_phase_array();
 	}
 	//Reset decoder
 	void reset();
@@ -120,7 +122,7 @@ public:
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
-	void decode_symb( std::complex<double> newsamp );
+	void decode_symb( std::complex<int> newsamp );
 	bool is_qpsk() const
 	{
 		return m_rx_mode != mode::bpsk;
@@ -134,7 +136,6 @@ private:
 	int m_rx_frequency { 1500 };
 	int m_nco_phzinc;
 	std::array<survivor_states, 16> m_survivor_states;
-	std::array<long , 16> m_iq_phase_array;
 	_internal::symbol_synchronizer m_sync;
 	int m_sql_level;
 	double m_dev_ave;
@@ -144,12 +145,7 @@ private:
 	double m_sample_freq;
 	_internal::agc m_agc;
 	_internal::afc m_afc;
-
-	double m_I0 {};		// 4 stage I/Q delay line variables
-	double m_I1 {};
-	double m_Q0 {};
-	double m_Q1 {};
-	int m_iq_phz_index {};
+    _internal::diff_angle_calc m_angle_calc;
 	mode m_rx_mode { mode::bpsk };
 	bool m_last_bit_zero {};
 	uint16_t m_bit_acc {};
