@@ -22,6 +22,8 @@
 #include "synchronizer.hpp"
 #include "diff_angle_calc.hpp"
 #include "viterbi_decoder.hpp"
+#include "squelch.hpp"
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -33,8 +35,6 @@ typedef int16_t sample_type;
 typedef std::array<int, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<unsigned int, 16> sync_array_type;
-//Squelch tresh type
-typedef int sqelch_value_type;
 //Sample rate type
 typedef short samplerate_type;
 /* ------------------------------------------------------------------------- */
@@ -69,11 +69,6 @@ public:
 		b63,
 		b125
 	};
-	enum class squelch_mode
-	{
-		slow,
-		fast
-	};
 	//Construct the decoder object
 	explicit decoder( samplerate_type sample_rate, event_callback_type  callback );
 	//Process input sample buffer
@@ -103,14 +98,17 @@ public:
 	//Get signal level
 	int get_signal_level() const
 	{
-		return m_sql_level>0?m_sql_level:0;
+		return m_squelch.get_level();
 	}
 	const sync_array_type& get_sync_data() const
 	{
 		return m_sync.get_sync_data();
 	}
 	//Set squelch tresh
-	void set_squelch_tresh( sqelch_value_type tresh, squelch_mode mode );
+	void set_squelch_tresh( sqelch_value_type tresh, squelch_mode mode )
+	{
+		m_squelch.set_tresh( tresh, mode );
+	}
 private:
 	void calc_quality( double angle );
 	bool viterbi_decode( double newangle );
@@ -130,26 +128,16 @@ private:
 	_internal::symbol_synchronizer m_sync;
 	//TODO: FIXME: Temporary viterbi decoder is here
 	_internal::viterbi_decoder m_viterbi_decoder;
-	int m_sql_level;
-	double m_dev_ave;
 	int m_sample_cnt {};
-	bool m_imd_valid {};
 	_internal::imd_calculator m_calc_imd;
 	double m_sample_freq;
 	_internal::agc m_agc;
 	_internal::afc m_afc;
     _internal::diff_angle_calc m_angle_calc;
+    _internal::squelch m_squelch;
 	mode m_rx_mode { mode::bpsk };
 	bool m_last_bit_zero {};
 	uint16_t m_bit_acc {};
-	bool m_sq_open {};
-	int m_squelch_speed { 75 };
-	double m_q_freq_error {};
-	int m_on_count {};
-	int m_off_count {};
-	int m_pcnt {};
-	int m_ncnt {};
-	int m_sq_thresh { 50 };
     //FIR1 BITFIR_LENGTH
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH, std::complex<long> > m_fir1_dec;
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long> > m_fir2_dec;

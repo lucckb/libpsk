@@ -48,9 +48,9 @@ namespace
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
+            psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
             psk_dec.set_frequency( 2125 );
-            //psk_dec.set_squelch_tresh( 50, ham::psk::decoder::squelch_mode::fast );
+            //psk_dec.set_squelch_tresh( 50, ham::psk::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 ); //TMP
 		#if 0
 			wfile = fopen("test.raw","wb");

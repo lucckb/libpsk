@@ -31,19 +31,9 @@ namespace psk {
 //Unnamed anon namespace
 namespace
 {
-	constexpr auto PI2 = 8.0 * std::atan(1.0);
-	constexpr auto PHZ_180_QMIN	= PI2/8.0;		// Pi/4
-	constexpr auto PHZ_180_QMAX	= 3.0*PI2/8.0;	// 3Pi/4
-	constexpr auto PHZ_0_QMIN	= 5.0*PI2/8.0;		// 5Pi/4
-	constexpr auto PHZ_0_QMAX	= 7.0*PI2/8.0;		// 7Pi/4
-	constexpr auto PHZ_180_BMIN = 0.0;			// 0
-	constexpr auto PHZ_180_BMAX = PI2/2.0;		// Pi
-	constexpr auto PHZ_0_BMIN	= PI2/2.0;			// Pi
-	constexpr auto PHZ_0_BMAX	= PI2;
 
-
-    constexpr double SMUL = std::numeric_limits<short>::max();
-	constexpr short Dec4LPCoef[ ] = {
+     constexpr double SMUL = std::numeric_limits<short>::max();
+	 constexpr short Dec4LPCoef[ ] = {
 	 short(-0.00021203644 * SMUL + 0.5),
 	 short(-0.00070252426 * SMUL + 0.5),
 	 short(-0.0016680526 * SMUL + 0.5),
@@ -402,22 +392,13 @@ decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 }
 
 /* ------------------------------------------------------------------------- */
-//Set squelch tresh
-void decoder::set_squelch_tresh( sqelch_value_type thresh, squelch_mode mode )
-{
-	m_sq_thresh = thresh;
-	if( mode == squelch_mode::fast ) m_squelch_speed = 20;
-	else if( mode == squelch_mode::slow ) m_squelch_speed = 75;
-}
-/* ------------------------------------------------------------------------- */
 void decoder::set_frequency( int freq )
 {
 	if( freq != m_rx_frequency)
 	{
 		m_rx_frequency = freq;
 		m_nco_phzinc = (PI2I*freq)/m_sample_freq;
-		m_pcnt = 0;
-		m_ncnt = 0;
+		m_squelch.reset_frequency();
 		m_afc.reset( m_nco_phzinc );
 	}
 }
@@ -437,8 +418,7 @@ void decoder::reset()
     m_viterbi_decoder.reset();
 	m_sync.reset();
 	m_angle_calc.reset();
-	m_sql_level = 10;
-	m_dev_ave = 90.0;
+	m_squelch.reset();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -449,7 +429,7 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	bool GotChar = false;
 	//Successive fix it
 	int angle_int = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
-	double angle = angle_int / double(_internal::diff_angle_calc::SCALE);
+	double angle = angle_int / double(_internal::diff_angle_calc::SCALE );
 	calc_quality( angle );
 	if(m_rx_mode == mode::bpsk)
 	{
@@ -483,7 +463,7 @@ void decoder::decode_symb( std::complex<int> newsamp )
 			m_last_bit_zero = false;
 	}
 	//FIXME this
-	if(GotChar && (ch!=0) && m_sq_open )
+	if(GotChar && (ch!=0) && m_squelch.is_open() )
 	{
 		if( m_callback ) m_callback( cb_rxchar, ch, 0 );
 	}
@@ -493,113 +473,9 @@ void decoder::decode_symb( std::complex<int> newsamp )
 /* ------------------------------------------------------------------------- */
 void decoder::calc_quality( double angle )
 {
-	constexpr auto ELIMIT = 5;
-	double temp;
-	double SqTimeK =  double(m_squelch_speed);
-	if( (is_qpsk() && ((angle >= PHZ_180_QMIN) && (angle <= PHZ_180_QMAX) ) ) ||
-		( !is_qpsk() && ((angle >= PHZ_180_BMIN) && (angle <= PHZ_180_BMAX))) )
-	{	//look +/-45 or +/-180 deg. around 180 deg.
-		if(m_rx_mode == mode::qpskl )
-			temp = PI2/4.0 - angle;
-		else
-			temp = angle - PI2/4.0;
-		m_q_freq_error = temp;
-		if( is_qpsk() ) //if QPSK
-			temp = 280.0*std::abs(temp);
-		else
-			temp = 150.0*std::abs(temp);
-		if( temp < m_dev_ave)
-			m_dev_ave=  (1.0-1.0/SqTimeK)*m_dev_ave + (1.0/SqTimeK)*temp;
-		else
-			m_dev_ave =  (1.0-1.0/(SqTimeK*2.0))*m_dev_ave + (1.0/(SqTimeK*2.0))*temp;
-		if(m_on_count > 20 )		// fast squelch counter
-			m_dev_ave = 100.0-75.0;	//set to 75%
-		else
-			m_on_count++;
-		m_off_count = 0;
-		if( m_q_freq_error >= 0.0 )
-		{
-			m_pcnt++;
-			m_ncnt = 0;
-		}
-		else
-		{
-			m_ncnt++;
-			m_pcnt = 0;
-		}
-		if( (m_pcnt<ELIMIT) && (m_ncnt<ELIMIT) )
-			m_q_freq_error = 0.0;
-	}
-	else
-	{
-		if( (is_qpsk() && ((angle >= PHZ_0_QMIN) && (angle <= PHZ_0_QMAX) ) ) ||
-			(!is_qpsk() && ((angle >= PHZ_0_BMIN) && (angle <= PHZ_0_BMAX) ) ) )
-
-		{		//look +/-45 or +/- 180 deg. around 0 deg.
-			if( m_rx_mode== mode::qpskl )
-				temp = 3*PI2/4.0 - angle;
-			else
-				temp = angle - 3*PI2/4.0;
-			m_q_freq_error = temp;
-			if( is_qpsk() ) //if QPSK
-				temp = 280.0*std::abs(temp);
-			else
-				temp = 150.0*std::abs(temp);
-			if( temp < m_dev_ave)
-				m_dev_ave =  (1.0-1.0/SqTimeK)*m_dev_ave + (1.0/SqTimeK)*temp;
-			else
-				m_dev_ave =  (1.0-1.0/(SqTimeK*2.0))*m_dev_ave + (1.0/(SqTimeK*2.0))*temp;
-			if(m_off_count > 20 )	// fast squelch counter
-				if( m_rx_mode == mode::bpsk  ) //if BPSK
-					m_dev_ave = 100.0 - 0.0;		//set to 0%
-			else
-				m_off_count++;
-			m_on_count = 0;
-			if( m_q_freq_error >= 0.0 )
-			{
-				m_pcnt++;
-				m_ncnt = 0;
-			}
-			else
-			{
-				m_ncnt++;
-				m_pcnt = 0;
-			}
-			if( (m_pcnt<ELIMIT) && (m_ncnt<ELIMIT) )
-				m_q_freq_error = 0.0;
-		}
-
-	}
-	m_imd_valid = (m_on_count >2);
-
-	if( m_agc() > 10.0 )
-	{
-		if( is_qpsk() ) //if QPSK
-			m_sql_level = 100 - int(m_dev_ave);
-		else
-			m_sql_level = 100 - int(m_dev_ave);
-		m_sq_open = ( m_sql_level >= m_sq_thresh );
-	}
-	else
-	{
-		m_sql_level = 0;
-		m_sq_open = false;
-	}
-	if(is_qpsk())
-	{
-		if( m_q_freq_error > .6 )//  clamp range to +/- 3 Hz
-			m_q_freq_error = .6;
-		if( m_q_freq_error < -.6 )
-			m_q_freq_error = -.6;
-	}
-	else
-	{
-		if( m_q_freq_error> 1.0 )//  clamp range to +/- 5 Hz
-			m_q_freq_error = 1.0;
-		if( m_q_freq_error < -1.0 )
-			m_q_freq_error = -1.0;
-	}
-	m_afc.update_angle_error( m_q_freq_error );
+    auto freq_error = m_squelch( angle, m_agc(), is_qpsk(),
+    		m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
+	m_afc.update_angle_error( freq_error );
 }
 
 /* ------------------------------------------------------------------------- */
@@ -646,10 +522,10 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             	//Perform AFC operation
             	m_nco_phzinc = m_afc( freq_signal, m_nco_phzinc);
 				// Bit Timing synchronization
-				if( m_sync(bit_signal, m_sq_open) )
+				if( m_sync(bit_signal, m_squelch.is_open()) )
 					decode_symb( bit_signal );
 				// Calculate IMD if only idles have been received and the energies collected
-				if( m_imd_valid )
+				if( m_squelch.is_imd_valid() )
 				{
 					if( m_calc_imd.calc_energies( filtered_sample ) )
 					{
