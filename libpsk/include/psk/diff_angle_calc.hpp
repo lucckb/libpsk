@@ -22,9 +22,16 @@ namespace _internal {
 /* ------------------------------------------------------------------------- */
 class diff_angle_calc
 {
+	//Make object noncopyable
+	diff_angle_calc(const diff_angle_calc&) = delete;
+	diff_angle_calc& operator=(const diff_angle_calc&) = delete;
 public:
 	//SCALE for the angle
 	static constexpr auto SCALE = 1<<15;
+	//Default constructor
+	diff_angle_calc()
+	{
+	}
 	//Reset difference angle decoder
 	void reset()
 	{
