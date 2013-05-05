@@ -85,7 +85,7 @@ public:
 		m_ncnt = 0;
 	}
 	// Squelch functor return signal level
-	double operator()( int iangle, int agc_value, bool is_qpsk, bool is_qpsk_lsb, bool is_bpsk )
+	int operator()( int iangle, int agc_value, bool is_qpsk, bool is_qpsk_lsb, bool is_bpsk )
 	{
 		constexpr auto ELIMIT = 5;
 		if( (is_qpsk && ((iangle >= PHZ_180_QMIN) && (iangle <= PHZ_180_QMAX) ) ) ||
@@ -193,7 +193,7 @@ public:
 			if( m_q_freq_error < scale(-1.0) )
 				m_q_freq_error = scale(-1.0);
 		}
-		return m_q_freq_error/double(SCALE);
+		return m_q_freq_error;
 	}
 //Private data squelch members
 private:

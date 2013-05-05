@@ -82,7 +82,7 @@ public:
 	}
 	//TODO: Remove double when next stage will use integers
 	//Phase error update
-	void update_angle_error( double err )
+	void update_angle_error( int aerr )
 	{
 		constexpr auto PHZDERIVED_GN =  1.0/.2;		//gain to make error in Hz
 		//narrow phase derived afc constans
@@ -97,11 +97,11 @@ public:
 		{
 			if(is_fast())
 			{
-				m_fperr_ave = F_K1*(m_fperr_ave/ASCALE) +  F_K2*err*ASCALE;
+				m_fperr_ave = F_K1*(m_fperr_ave/ASCALE) +  F_K2*aerr;
 			}
 			else
 			{
-				m_fperr_ave = S_K1*(m_fperr_ave/ASCALE) + S_K2*err*ASCALE;
+				m_fperr_ave = S_K1*(m_fperr_ave/ASCALE) + S_K2*aerr;
 			}
 		}
 		else

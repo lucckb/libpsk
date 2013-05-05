@@ -428,11 +428,10 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	bool bit;
 	bool GotChar = false;
 	//Successive fix it
-	int angle_int = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
-	double angle = angle_int / double(_internal::diff_angle_calc::SCALE );
+	int angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
 	{
 		//Calc quality
-		auto freq_error = m_squelch( angle_int, m_agc(), is_qpsk(),
+		auto freq_error = m_squelch( angle, m_agc(), is_qpsk(),
 		    	m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
 		 m_afc.update_angle_error( freq_error );
 	}
@@ -444,7 +443,7 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	}
 	else
 	{
-		bit = m_viterbi_decoder( angle_int );
+		bit = m_viterbi_decoder( angle );
 	}
 	if( (bit==0) && m_last_bit_zero )	//if character delimiter
 	{
