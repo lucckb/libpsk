@@ -43,7 +43,7 @@ void imd_calculator::reset()
 	m_ncount = 0;
 }
 /* ------------------------------------------------------------------------- */
-bool imd_calculator::calc_energies( std::complex<double> samp )
+bool imd_calculator::calc_energies( std::complex<int> samp )
 {
 	std::complex<double> temp;
 	for(int i=0; i<NUM_FILTERS;i++)

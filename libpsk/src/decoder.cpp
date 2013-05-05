@@ -14,14 +14,6 @@
 #include <iomanip>
 
 
-
-//TODO: Temporary  cast for test purpose only
-template< typename T>
-	std::complex<double> inline cplxf_cast( std::complex<T> v, int scale = 1 )
-{
-	return std::complex<double>(double(v.real())/double(scale), double(v.imag())/double(scale));
-}
-
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -382,7 +374,7 @@ decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
       m_sync(  std::bind( callback, decoder::cb_clkerror, std::placeholders::_1, 0) ),
 	  m_sample_freq( sample_rate ),
-	  m_afc(m_nco_phzinc, 50.0*PI2I/int(sample_rate) ),
+	  m_afc(m_nco_phzinc, 50*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
       m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef )
 {
@@ -467,7 +459,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
             //1.21 AA6YQ second decimation filter not required for PSK125
 			if( m_baudrate==baudrate::b125 || ((m_sample_cnt%mod16_8) == 0) ) //calc second decimation filter every 8 or 16samples
 			{
-				std::complex<double> filtered_sample;
+				std::complex<int> filtered_sample;
                 if (m_baudrate!=baudrate::b125)	//decimate by 4 or 2 filter (PSK31 or PSK63)
 				{
                     m_fir2_dec ( m_fir1_dec() );

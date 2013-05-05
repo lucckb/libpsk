@@ -128,7 +128,7 @@ private:
 	_internal::viterbi_decoder m_viterbi_decoder;
 	int m_sample_cnt {};
 	_internal::imd_calculator m_calc_imd;
-	double m_sample_freq;
+	const int m_sample_freq;
 	_internal::agc m_agc;
 	_internal::afc m_afc;
     _internal::diff_angle_calc m_angle_calc;

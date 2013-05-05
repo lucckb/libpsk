@@ -24,7 +24,7 @@ class imd_calculator {
 public:
 	imd_calculator() {}
 	void reset();
-	bool calc_energies( std::complex<double> samp );
+	bool calc_energies( std::complex<int> samp );
 	bool calc_value( int &imd_val );
 private:
 	std::array<double, NUM_FILTERS> I1 {{}};
