@@ -7,7 +7,6 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "psk/decoder.hpp"
-#include "psk/varicode.hpp"
 #include <complex>
 #include <cmath>
 #include <cstdio>
@@ -424,9 +423,6 @@ void decoder::reset()
 /* ------------------------------------------------------------------------- */
 void decoder::decode_symb( std::complex<int> newsamp )
 {
-	uint8_t ch = 0;
-	bool bit;
-	bool GotChar = false;
 	//Successive fix it
 	int angle = m_angle_calc( newsamp, m_agc(), m_rx_mode == mode::qpskl );
 	{
@@ -435,45 +431,24 @@ void decoder::decode_symb( std::complex<int> newsamp )
 		    	m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
 		 m_afc.update_angle_error( freq_error );
 	}
+	bool bit;
 	if(m_rx_mode == mode::bpsk)
 	{
 		//calc BPSK symbol over 2 chips
 		//vect.imag( m_angle_calc.get_energy() );
-		bit = bool(m_angle_calc.get_energy() > 0.0);
+		bit = bool(m_angle_calc.get_energy() > 0);
 	}
 	else
 	{
 		bit = m_viterbi_decoder( angle );
 	}
-	if( (bit==0) && m_last_bit_zero )	//if character delimiter
-	{
-		if(m_bit_acc != 0 )
-		{
-			constexpr _internal::varicode v;
-			m_bit_acc >>= 2;				//get rid of last zero and one
-			m_bit_acc &= 0x07FF;
-			ch = v.reverse(m_bit_acc);
-			m_bit_acc = 0;
-			GotChar = true;
-		}
-	}
-	else
-	{
-		m_bit_acc <<= 1;
-		m_bit_acc |= bit;
-		if(bit==0)
-			m_last_bit_zero = true;
-		else
-			m_last_bit_zero = false;
-	}
-	//FIXME this
-	if(GotChar && (ch!=0) && m_squelch.is_open() )
+	//Decode symbol
+	auto ch = m_symb_decoder( bit );
+	if(ch>0 && m_squelch.is_open() )
 	{
 		if( m_callback ) m_callback( cb_rxchar, ch, 0 );
 	}
-	GotChar = false;
 }
-
 
 /* ------------------------------------------------------------------------- */
 //Process input sample buffer

@@ -23,7 +23,7 @@
 #include "diff_angle_calc.hpp"
 #include "viterbi_decoder.hpp"
 #include "squelch.hpp"
-
+#include "symbol_decoder.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -133,9 +133,8 @@ private:
 	_internal::afc m_afc;
     _internal::diff_angle_calc m_angle_calc;
     _internal::squelch m_squelch;
+    _internal::symbol_decoder m_symb_decoder;
 	mode m_rx_mode { mode::bpsk };
-	bool m_last_bit_zero {};
-	uint16_t m_bit_acc {};
     //FIR1 BITFIR_LENGTH
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH, std::complex<long> > m_fir1_dec;
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long> > m_fir2_dec;
