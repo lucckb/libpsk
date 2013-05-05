@@ -104,7 +104,7 @@ public:
 			if( temp < m_dev_ave)
 				m_dev_ave =  m_dev_ave - m_dev_ave/m_squelch_speed + temp/m_squelch_speed;
 			else
-				m_dev_ave =  m_dev_ave - m_dev_ave/(m_squelch_speed*2)  + temp/(m_squelch_speed*2.0);
+				m_dev_ave =  m_dev_ave - m_dev_ave/(m_squelch_speed*2)  + temp/(m_squelch_speed*2);
 			if(m_on_count > 20 )		// fast squelch counter
 				m_dev_ave = (100-75)*SCALE;		//set to 75%
 			else
