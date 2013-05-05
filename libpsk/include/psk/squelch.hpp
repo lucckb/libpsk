@@ -33,14 +33,19 @@ class squelch
 	squelch& operator=(const squelch&) = delete;
 	static constexpr auto SCALE = diff_angle_calc::SCALE;
 	static constexpr auto PI2 = 8.0 * std::atan(1.0);
-	static constexpr auto PHZ_180_QMIN	= PI2/8.0;		// Pi/4
-	static constexpr auto PHZ_180_QMAX	= 3.0*PI2/8.0;	// 3Pi/4
-	static constexpr auto PHZ_0_QMIN	= 5.0*PI2/8.0;		// 5Pi/4
-	static constexpr auto PHZ_0_QMAX	= 7.0*PI2/8.0;		// 7Pi/4
-	static constexpr auto PHZ_180_BMIN = 0.0;			// 0
-	static constexpr auto PHZ_180_BMAX = PI2/2.0;		// Pi
-	static constexpr auto PHZ_0_BMIN	= PI2/2.0;			// Pi
-	static constexpr auto PHZ_0_BMAX	= PI2;
+	static constexpr int PHZ_180_QMIN	= (PI2/8.0) 	* SCALE + 0.5;		// Pi/4
+	static constexpr int PHZ_180_QMAX	= (3.0*PI2/8.0) * SCALE + 0.5;		// 3Pi/4
+	static constexpr int PHZ_0_QMIN	= (5.0*PI2/8.0) 	* SCALE + 0.5;		// 5Pi/4
+	static constexpr int PHZ_0_QMAX	= (7.0*PI2/8.0) 	* SCALE	+ 0.5;		// 7Pi/4
+	static constexpr int PHZ_180_BMIN = 0.0 			* SCALE	+ 0.5;		// 0
+	static constexpr int PHZ_180_BMAX = PI2/2.0			* SCALE	+ 0.5;		// Pi
+	static constexpr int PHZ_0_BMIN	= PI2/2.0			* SCALE	+ 0.5;		// Pi
+	static constexpr int PHZ_0_BMAX	= PI2				* SCALE	+ 0.5;
+private:
+	static constexpr int scale( const double v )
+	{
+		return v * SCALE + 0.5;
+	}
 public:
 	//Constructor
 	squelch()
@@ -71,7 +76,7 @@ public:
 	void reset()
 	{
 		m_sql_level = 10;
-		m_dev_ave = 90.0;
+		m_dev_ave = 90*SCALE;
 	}
 	//Reset frequency
 	void reset_frequency()
@@ -80,33 +85,32 @@ public:
 		m_ncnt = 0;
 	}
 	// Squelch functor return signal level
-	double operator()( double angle, int agc_value, bool is_qpsk, bool is_qpsk_lsb, bool is_bpsk )
+	double operator()( int iangle, int agc_value, bool is_qpsk, bool is_qpsk_lsb, bool is_bpsk )
 	{
 		constexpr auto ELIMIT = 5;
-		double temp;
-		double SqTimeK =  double(m_squelch_speed);
-		if( (is_qpsk && ((angle >= PHZ_180_QMIN) && (angle <= PHZ_180_QMAX) ) ) ||
-		( !is_qpsk && ((angle >= PHZ_180_BMIN) && (angle <= PHZ_180_BMAX))) )
+		if( (is_qpsk && ((iangle >= PHZ_180_QMIN) && (iangle <= PHZ_180_QMAX) ) ) ||
+		( !is_qpsk && ((iangle >= PHZ_180_BMIN) && (iangle <= PHZ_180_BMAX))) )
 		{	//look +/-45 or +/-180 deg. around 180 deg.
+			int temp;
 			if( is_qpsk_lsb )
-				temp = PI2/4.0 - angle;
+				temp = scale(PI2/4.0) - iangle;
 			else
-				temp = angle - PI2/4.0;
+				temp = iangle - scale(PI2/4.0);
 			m_q_freq_error = temp;
 			if( is_qpsk ) //if QPSK
-				temp = 280.0*std::abs(temp);
+				temp = 280*std::abs(temp);
 			else
-				temp = 150.0*std::abs(temp);
+				temp = 150*std::abs(temp);
 			if( temp < m_dev_ave)
-				m_dev_ave=  (1.0-1.0/SqTimeK)*m_dev_ave + (1.0/SqTimeK)*temp;
+				m_dev_ave =  m_dev_ave - m_dev_ave/m_squelch_speed + temp/m_squelch_speed;
 			else
-				m_dev_ave =  (1.0-1.0/(SqTimeK*2.0))*m_dev_ave + (1.0/(SqTimeK*2.0))*temp;
+				m_dev_ave =  m_dev_ave - m_dev_ave/(m_squelch_speed*2)  + temp/(m_squelch_speed*2.0);
 			if(m_on_count > 20 )		// fast squelch counter
-				m_dev_ave = 100.0-75.0;	//set to 75%
+				m_dev_ave = (100-75)*SCALE;		//set to 75%
 			else
 				m_on_count++;
 			m_off_count = 0;
-			if( m_q_freq_error >= 0.0 )
+			if( m_q_freq_error >= 0 )
 			{
 				m_pcnt++;
 				m_ncnt = 0;
@@ -117,34 +121,35 @@ public:
 				m_pcnt = 0;
 			}
 			if( (m_pcnt<ELIMIT) && (m_ncnt<ELIMIT) )
-					m_q_freq_error = 0.0;
+					m_q_freq_error = 0;
 		}
 		else
 		{
-			if( (is_qpsk && ((angle >= PHZ_0_QMIN) && (angle <= PHZ_0_QMAX) ) ) ||
-				(!is_qpsk && ((angle >= PHZ_0_BMIN) && (angle <= PHZ_0_BMAX) ) ) )
+			if( (is_qpsk && ((iangle >= PHZ_0_QMIN) && (iangle <= PHZ_0_QMAX) ) ) ||
+				(!is_qpsk && ((iangle >= PHZ_0_BMIN) && (iangle <= PHZ_0_BMAX) ) ) )
 
 			{		//look +/-45 or +/- 180 deg. around 0 deg.
+				int temp;
 				if( is_qpsk_lsb )
-					temp = 3*PI2/4.0 - angle;
+					temp = scale(3*PI2/4.0) - iangle;
 				else
-					temp = angle - 3*PI2/4.0;
+					temp = iangle - scale(3*PI2/4.0);
 				m_q_freq_error = temp;
 				if( is_qpsk ) //if QPSK
-					temp = 280.0*std::abs(temp);
+					temp = 280*std::abs(temp);
 				else
-					temp = 150.0*std::abs(temp);
+					temp = 150*std::abs(temp);
 				if( temp < m_dev_ave)
-					m_dev_ave =  (1.0-1.0/SqTimeK)*m_dev_ave + (1.0/SqTimeK)*temp;
+					m_dev_ave =  (m_dev_ave-m_dev_ave/m_squelch_speed) + (temp/m_squelch_speed);
 				else
-					m_dev_ave =  (1.0-1.0/(SqTimeK*2.0))*m_dev_ave + (1.0/(SqTimeK*2.0))*temp;
+					m_dev_ave =  (m_dev_ave-m_dev_ave/(m_squelch_speed*2)) + (temp/(m_squelch_speed*2));
 				if(m_off_count > 20 )	// fast squelch counter
 					if( is_bpsk ) //if BPSK
-						m_dev_ave = 100.0 - 0.0;		//set to 0%
+						m_dev_ave = (100-0)*SCALE;		//set to 0%
 				else
 					m_off_count++;
 				m_on_count = 0;
-				if( m_q_freq_error >= 0.0 )
+				if( m_q_freq_error >= 0 )
 				{
 					m_pcnt++;
 					m_ncnt = 0;
@@ -155,18 +160,18 @@ public:
 					m_pcnt = 0;
 				}
 				if( (m_pcnt<ELIMIT) && (m_ncnt<ELIMIT) )
-					m_q_freq_error = 0.0;
+					m_q_freq_error = 0;
 			}
 
 		}
-		m_imd_valid = (m_on_count >2);
+		m_imd_valid = (m_on_count>2);
 
-		if( agc_value > 10.0 )
+		if( agc_value > 10 )
 		{
 			if( is_qpsk ) //if QPSK
-				m_sql_level = 100 - int(m_dev_ave);
+				m_sql_level = 100 - m_dev_ave/SCALE;
 			else
-				m_sql_level = 100 - int(m_dev_ave);
+				m_sql_level = 100 - m_dev_ave/SCALE;
 			m_sq_open = ( m_sql_level >= m_sq_thresh );
 		}
 		else
@@ -176,25 +181,25 @@ public:
 		}
 		if(is_qpsk)
 		{
-			if( m_q_freq_error > .6 )//  clamp range to +/- 3 Hz
-				m_q_freq_error = .6;
-			if( m_q_freq_error < -.6 )
-				m_q_freq_error = -.6;
+			if( m_q_freq_error > scale(.6) )//  clamp range to +/- 3 Hz
+				m_q_freq_error = scale(.6);
+			if( m_q_freq_error < scale(-.6) )
+				m_q_freq_error = scale(-.6);
 		}
 		else
 		{
-			if( m_q_freq_error> 1.0 )//  clamp range to +/- 5 Hz
-					m_q_freq_error = 1.0;
-			if( m_q_freq_error < -1.0 )
-				m_q_freq_error = -1.0;
+			if( m_q_freq_error> scale(1.0) )//  clamp range to +/- 5 Hz
+					m_q_freq_error = scale(1.0);
+			if( m_q_freq_error < scale(-1.0) )
+				m_q_freq_error = scale(-1.0);
 		}
-		return m_q_freq_error;
+		return m_q_freq_error/double(SCALE);
 	}
 //Private data squelch members
 private:
 	int m_squelch_speed { 75 };
-	double m_q_freq_error {};
-	double m_dev_ave;
+	int m_q_freq_error {};
+	int m_dev_ave;
 	int m_on_count {};
 	int m_off_count {};
 	int m_pcnt {};

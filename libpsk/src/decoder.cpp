@@ -432,7 +432,7 @@ void decoder::decode_symb( std::complex<int> newsamp )
 	double angle = angle_int / double(_internal::diff_angle_calc::SCALE );
 	{
 		//Calc quality
-		auto freq_error = m_squelch( angle, m_agc(), is_qpsk(),
+		auto freq_error = m_squelch( angle_int, m_agc(), is_qpsk(),
 		    	m_rx_mode == mode::qpskl, m_rx_mode == mode::bpsk );
 		 m_afc.update_angle_error( freq_error );
 	}
