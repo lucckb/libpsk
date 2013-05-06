@@ -15,8 +15,9 @@ namespace ham {
 namespace psk {
 namespace _internal {
 /* ------------------------------------------------------------------------- */
-
-class imd_calculator {
+/* Calculate the IMD signal quality */
+class imd_calculator
+{
 	//Make object noncopyable
 	imd_calculator(const imd_calculator&) = delete;
 	imd_calculator& operator=(const imd_calculator&) = delete;
@@ -27,14 +28,14 @@ public:
 	bool calc_energies( std::complex<int> samp );
 	bool calc_value( int &imd_val );
 private:
-	std::array<double, NUM_FILTERS> I1 {{}};
-	std::array<double, NUM_FILTERS> I2 {{}};
-	std::array<double, NUM_FILTERS> Q1 {{}};
-	std::array<double, NUM_FILTERS> Q2 {{}};
-	std::array<double, NUM_FILTERS> m_energy {{}};
+	std::array<int, NUM_FILTERS> I1 {{}};
+	std::array<int, NUM_FILTERS> I2 {{}};
+	std::array<int, NUM_FILTERS> Q1 {{}};
+	std::array<int, NUM_FILTERS> Q2 {{}};
+	std::array<unsigned long long, NUM_FILTERS> m_energy {{}};
 	int m_ncount {};
-	double m_snr {};
-	double m_imd {};
+	int m_snr {};
+	int m_imd {};
 };
 /* ------------------------------------------------------------------------- */
 } /* namespace _internal */
