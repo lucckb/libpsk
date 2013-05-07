@@ -7,7 +7,6 @@
 
 /* ------------------------------------------------------------------------- */
 #include "psk/imd_calculator.hpp"
-#include "dsp/log10_int.hpp"
 #include <iostream>
 
 /* ------------------------------------------------------------------------- */
@@ -45,6 +44,16 @@ namespace
 	constexpr inline int mul_is( int c1, int c2 )
 	{
 		return ((c1) * (c2))/SCALE;
+	}
+	inline unsigned log2_ll(unsigned long long x)
+	{
+		return (8*sizeof (unsigned long long) - __builtin_clzll(x))-1;
+	}
+	template< unsigned SCALE >
+	inline unsigned log10_ll( unsigned long long x )
+	{
+		constexpr int log_2_10 = std::log2(10) * SCALE;
+		return (log2_ll(x) *SCALE*SCALE)/log_2_10;
 	}
 }
 
@@ -91,9 +100,8 @@ bool imd_calculator::calc_energies( std::complex<int> samp )
 /* ------------------------------------------------------------------------- */
 bool imd_calculator::calc_value( int &imd_val )
 {
-
-	m_snr = 10 * (dsp::integer::log10( m_energy[0]) - dsp::integer::log10(m_energy[1]));
-	m_imd = 10 * (dsp::integer::log10( m_energy[2]) - dsp::integer::log10(m_energy[0]));
+	m_snr = log10_ll<10>( m_energy[0] ) - log10_ll<10>( m_energy[1] );
+	m_imd = log10_ll<10>( m_energy[2] ) - log10_ll<10>( m_energy[0] );
 	imd_val = int(m_imd);
 	return m_snr > (-m_imd+6);
 }
