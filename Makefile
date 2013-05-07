@@ -5,14 +5,14 @@ TARGET	   = psk31test
 
 #Optimalization [0,1,2,3,s]
 # 0 - none optimalization, s - size optimalization 3 - most optimized
-OPT ?= 2
+OPT ?= s 
 
 
 #Common flags 
 COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. 
 COMMON_FLAGS += -D__STDC_CONSTANT_MACROS -I./libpsk/include
 #Code profiler
-COMMON_FLAGS += -pg
+COMMON_FLAGS +=
 
 #C compiler options
 CFLAGS += $(COMMON_FLAGS)

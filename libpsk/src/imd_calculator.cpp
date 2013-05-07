@@ -7,7 +7,6 @@
 
 /* ------------------------------------------------------------------------- */
 #include "psk/imd_calculator.hpp"
-#include <iostream>
 
 /* ------------------------------------------------------------------------- */
 namespace ham {
@@ -90,7 +89,6 @@ bool imd_calculator::calc_energies( std::complex<int> samp )
 						  mul_lls( mul_ll(Q1[i],Q2[i]),COEF[i] );
 
 			I1[i] = I2[i] = Q1[i] = Q2[i] = 0;
-			//std::cout << " m_energy[i] " << m_energy[i] << std::endl;
 		}
 		return true;
 	}
