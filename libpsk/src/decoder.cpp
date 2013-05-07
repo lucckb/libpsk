@@ -10,7 +10,6 @@
 #include <complex>
 #include <cmath>
 #include <cstdio>
-#include <iostream>
 #include <iomanip>
 
 
@@ -474,8 +473,8 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 				//	filter puts filtered signals in variables m_FreqSignal and m_BitSignal.
             	m_bit_fir( filtered_sample );
             	m_freq_fir( filtered_sample );
-            	std::complex<long> freq_signal = m_freq_fir();
-            	std::complex<long> bit_signal = m_bit_fir();
+            	std::complex<int> freq_signal = m_freq_fir();
+            	std::complex<int> bit_signal = m_bit_fir();
 				// Perform AGC operation
             	m_agc( freq_signal );
             	freq_signal = m_agc.scale( freq_signal );

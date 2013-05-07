@@ -51,7 +51,7 @@ namespace
 	template< unsigned SCALE >
 	inline unsigned log10_ll( unsigned long long x )
 	{
-		constexpr int log_2_10 = std::log2(10) * SCALE;
+		constexpr int log_2_10 = __builtin_log2(10) * SCALE;
 		return (log2_ll(x) *SCALE*SCALE)/log_2_10;
 	}
 }

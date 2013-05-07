@@ -2,12 +2,12 @@
 
 
 #Definicje programow
-CC      ?= $(CROSS_COMPILE)gcc
-CXX		?= $(CROSS_COMPILE)c++
-AR      ?= $(CROSS_COMPILE)ar
-CP      ?= $(CROSS_COMPILE)objcopy
-OBJDUMP ?= $(CROSS_COMPILE)objdump 
-SIZE 	?= $(CROSS_COMPILE)size
+CC      = $(CROSS_COMPILE)gcc
+CXX		= $(CROSS_COMPILE)c++
+AR      = $(CROSS_COMPILE)ar
+CP      = $(CROSS_COMPILE)objcopy
+OBJDUMP = $(CROSS_COMPILE)objdump 
+SIZE 	= $(CROSS_COMPILE)size
 
 #Current platform
 PLATFORM_DEVICE ?= BFC1

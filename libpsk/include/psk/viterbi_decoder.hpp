@@ -11,6 +11,7 @@
 #include <cmath>
 #include <array>
 #include <limits>
+#include <cstdlib>
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

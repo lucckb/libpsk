@@ -9,23 +9,26 @@ OPT ?= s
 
 
 #Common flags 
-COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. 
-COMMON_FLAGS += -D__STDC_CONSTANT_MACROS -I./libpsk/include
+COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. -I./libpsk/include
+#COMMON_FLAGS += -D__STDC_CONSTANT_MACROS 
 #Code profiler
-COMMON_FLAGS +=
+#COMMON_FLAGS += -pg
+
+#COMMON_FLAGS+= -mthumb -mtune=cortex-m3 -mcpu=cortex-m3
+#LDFLAGS+= -nostdlib -lgcc -lc -lstdc++
 
 #C compiler options
 CFLAGS += $(COMMON_FLAGS)
 CFLAGS += -std=gnu99 
 
 #C++ compiler options 
-CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048 
+CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
 
 #LDflags libraries etc.
 LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample
 
 #Per file listing
-LISTING = n
+LISTING = y
 
 #Debug version
 DEBUG ?=  y

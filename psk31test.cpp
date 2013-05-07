@@ -1,7 +1,14 @@
 //http://www.inb.uni-luebeck.de/~boehme/using_libavcodec.html
 //gcc --std=gnu99 -o tutorial01 psk31test.c  -lavformat -lavcodec -lz -lavutil 
 //ffplay -f f64le -ar 8000 -channels 1 ~/worksrc/workspace/psk31/test.raw
-#include <stdint.h>
+#include <limits>
+#include <cmath>
+#include <psk/decoder.hpp>
+#include <functional>
+
+
+
+#ifndef __arm__
 #include <functional>
 #include <cstdio>
 #include <iostream>
@@ -13,9 +20,8 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 }
-#include <limits>
-#include <psk/decoder.hpp>
-#include <functional>
+
+
 namespace 
 {
 	class sample_tester
@@ -261,4 +267,18 @@ int main(int argc, const char * const *argv )
     return 0;
 }
 
+#else /*ARM defined test only */
 
+void decoder_callback( int event, int param, int param2  )
+{
+
+}
+
+int main( )
+{
+	ham::psk::decoder psk_dec( 8000, decoder_callback );
+	static int16_t sample_buf[1024];
+	psk_dec( sample_buf, 1024 );
+}
+
+#endif

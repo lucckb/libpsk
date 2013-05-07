@@ -14,8 +14,7 @@
 #include <functional>
 #include <limits>
 #include "dsp/dsp_basic_ops.hpp"
-//TODO: Temporary
-#include <iostream>
+
 
 /* ------------------------------------------------------------------------- */
 namespace ham {

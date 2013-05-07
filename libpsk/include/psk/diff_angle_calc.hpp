@@ -12,9 +12,7 @@
 #include "dsp/dsp_basic_ops.hpp"
 #include "dsp/sqrt_int.hpp"
 #include "dsp/atan2_int.hpp"
-//Temporary
-#include <iostream>
-using namespace std;
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
