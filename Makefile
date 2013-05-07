@@ -28,7 +28,7 @@ CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
 LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample
 
 #Per file listing
-LISTING = y
+LISTING = n
 
 #Debug version
 DEBUG ?=  y
