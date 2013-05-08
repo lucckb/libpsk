@@ -174,24 +174,24 @@ void modulator::set_mode( mode mmode, baudrate baud )
 			break;
 	}
 	//enerate cosine ramp envelope lookup tables
-	size_t RampSize =  (int)(m_sample_freq/m_symbol_rate); //  number of envelope ramp steps per symbol
+	const size_t ramp_size =  (int)(m_sample_freq/m_symbol_rate); //  number of envelope ramp steps per symbol
 	for( size_t i=0; i<MAXRAMP_SIZE; i++)
 	{
 		PSKShapeTbl_Z[i] = 0.0;
 		PSKShapeTbl_P[i] = 1.0;
 		PSKShapeTbl_M[i] = -1.0;
-		PSKShapeTbl_PM[i] = cos( (double)i*m_2PI/(RampSize*2) );
+		PSKShapeTbl_PM[i] = cos( (double)i*m_2PI/(ramp_size*2) );
 		PSKShapeTbl_MP[i] = -PSKShapeTbl_PM[i];
 
-		if( i <RampSize/2 )
+		if( i <ramp_size/2 )
 		{
-			PSKShapeTbl_PZ[i] = cos( (double)i*m_2PI/(RampSize*2) );
+			PSKShapeTbl_PZ[i] = cos( (double)i*m_2PI/(ramp_size*2) );
 			PSKShapeTbl_MZ[i] = -PSKShapeTbl_PZ[i];
 			PSKShapeTbl_ZP[i] = 0.0;
 		}
 		else
 		{
-			PSKShapeTbl_ZP[i] = -cos( (double)i*m_2PI/(RampSize*2) );
+			PSKShapeTbl_ZP[i] = -cos( (double)i*m_2PI/(ramp_size*2) );
 			PSKShapeTbl_PZ[i] = 0.0;
 			PSKShapeTbl_MZ[i] = 0.0;
 		}
@@ -258,6 +258,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 	constexpr double m_RMSConstant = 22000;
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
+		cout << "ramp " << m_ramp << std::endl;
 		m_t += m_psk_phase_inc;			// increment radian phase count
 		// create sample from sin/cos and shape tables
 		sample[i] = m_RMSConstant*( m_p_psk_tx_i[m_ramp]* sin( m_t ) + m_p_psk_tx_q[m_ramp++]* cos( m_t ) );
