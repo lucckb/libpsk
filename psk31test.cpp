@@ -4,6 +4,7 @@
 #include <limits>
 #include <cmath>
 #include <psk/decoder.hpp>
+#include <psk/modulator.hpp>
 #include <functional>
 
 
@@ -54,7 +55,7 @@ namespace
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::bpsk, ham::psk::decoder::baudrate::b31 );
+            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
             psk_dec.set_frequency( 2125 );
             //psk_dec.set_squelch_tresh( 50, ham::psk::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 ); //TMP
@@ -473,45 +474,23 @@ private:
 };
 
 
-#define STREAM_DURATION 200.0
-static float t, tincr, tincr2;
-
-
-
-/* Prepare a 16 bit dummy audio frame of 'frame_size' samples and
- * 'nb_channels' channels. */
-static void gen_audio_frame(int16_t *samples, int frame_size, int nb_channels)
-{
-	int j, i, v;
-	int16_t *q;
-	q = samples;
-	for (j = 0; j < frame_size; j++)
-	{
-		v = (int)(sin(t) * 10000);
-		for (i = 0; i < nb_channels; i++)
-			*q++ = v;
-		t += tincr;
-		tincr += tincr2;
-	}
-}
 
 
 int encoder_main( const char *filename )
 {
 	class audio_writer ww( filename );
-	/* init signal generator */
-	t = 0;
-	tincr = 2 * M_PI * 110.0 / ww.get_samplerate();
-	/* increment frequency by 110 Hz per second */
-	tincr2 = 2 * M_PI * 110.0 / ww.get_samplerate() / ww.get_samplerate();
-
+	ham::psk::modulator mod( ww.get_samplerate(),  2125 );
+	const char txt[] = "Ala ma kota";
+	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
+	for(size_t i=0;i<sizeof txt - 1; i++)
+		mod.put_tx( txt[i] );
 	for (;;) {
 		/* Compute current audio and video time. */
-
-		if ( ww.get_pts() >= STREAM_DURATION)
-			break;
-		gen_audio_frame( ww.get_sample_buf(), ww.get_audio_frame_size(), ww.get_channels() );
+		mod( ww.get_sample_buf(), ww.get_audio_frame_size() );
+		//gen_audio_frame( ww.get_sample_buf(), ww.get_audio_frame_size(), ww.get_channels() );
 		ww.write_audio_data();
+		if( mod.get_state() == ham::psk::modulator::state::off )
+			break;
 	}
 	return 0;
 }
