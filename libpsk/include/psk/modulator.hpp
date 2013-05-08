@@ -62,7 +62,7 @@ public:
 	//Set auto shut off
 	void set_auto_shutoff( bool en = true )
 	{
-		m_NeedShutoff = en;
+		m_need_shutoff = en;
 	}
 	//Get tx state
 	state get_state() const
@@ -78,6 +78,10 @@ private:
 		SYM_OFF,		//No output
 		SYM_ON			//constant output
 	};
+
+	static constexpr int m_vect_lookup[6][2] =
+		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
+
 private:
 	int get_tx_char();
 	int get_char();
@@ -88,33 +92,32 @@ private:
 	const int m_sample_freq;
 	mode m_mode { mode::bpsk };
 	double m_t {};
-	double m_PSKPhaseInc;
-	double* m_pPSKtxI {};
-	double* m_pPSKtxQ {};
-	int m_Ramp {};
-	double m_PSKSecPerSamp {};
-	double m_PSKTime {};
-	double m_PSKPeriodUpdate {};
-	short m_PresentPhase {};
-	int m_IQPhaseArray[20] {};
-	int m_VectLookup[6][2];
-	sym m_Lastsymb {};
-	bool  m_AddEndingZero {};
-	short m_TxShiftReg {};
+	double m_psk_phase_inc;
+	double* m_p_psk_tx_i {};
+	double* m_p_psk_tx_q {};
+	int m_ramp {};
+	double m_psk_sec_per_samp {};
+	double m_psk_time {};
+	double m_psk_period_update {};
+	short m_present_phase {};
+	int m_iq_phase_array[20] {};
+	sym m_last_symb {};
+	bool  m_add_ending_zero {};
+	short m_tx_shift_reg {};
 	state m_state;
-	bool m_NeedShutoff { true };
-	int m_AmblePtr {};
-	int m_Postamble[33] {};
-	int m_Preamble[33] {};
-	bool m_NoSquelchTail {};
-	int m_pTail {};
-	int m_pHead {};
+	bool m_need_shutoff { true };
+	int m_amble_ptr {};
+	int m_postamble[33] {};
+	int m_preamble[33] {};
+	bool m_no_squelch_tail {};
+	int m_p_tail {};
+	int m_p_head {};
 	static constexpr auto  TX_BUF_SIZE = 256;
-	int m_pXmitQue[TX_BUF_SIZE];
-	bool m_TempNeedShutoff {};
-	bool m_TempNoSquelchTail {};
-	double m_SymbolRate { 31.25 };
-	short m_TxCodeWord {};
+	int m_p_xmit_que[TX_BUF_SIZE];
+	bool m_temp_need_shutoff {};
+	bool m_temp_no_squelch_tail {};
+	double m_symbol_rate { 31.25 };
+	short m_tx_code_word {};
 };
 
 /* ------------------------------------------------------------------------- */
