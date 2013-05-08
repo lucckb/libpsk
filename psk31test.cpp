@@ -20,7 +20,7 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 }
-
+#include <unistd.h>
 
 namespace 
 {
@@ -111,18 +111,16 @@ namespace
 
 }
 
-int main(int argc, const char * const *argv )
-{
-    if(argc < 2) 
-    {
 
-        printf("INvalid argument count\n");
-        return -1;
-    }
+
+
+int decoder_main( const char *filename )
+{
+
     av_register_all();
     AVFormatContext *pFormatCtx = avformat_alloc_context();
     // Open video file
-    if(avformat_open_input(&pFormatCtx, argv[1], NULL, 0)!=0)
+    if(avformat_open_input(&pFormatCtx, filename, NULL, 0)!=0)
     {
         printf("Couldn't open file\n");
         return -1;
@@ -133,7 +131,7 @@ int main(int argc, const char * const *argv )
         printf("Couldn't find stream\n");
         return -1;
     }
-    av_dump_format(pFormatCtx, 0, argv[1], 0);
+    av_dump_format(pFormatCtx, 0, filename , 0);
     int audioStream = -1;
     for( unsigned i=0; i<pFormatCtx->nb_streams; i++)
     {
@@ -266,6 +264,297 @@ int main(int argc, const char * const *argv )
     free( decoded_frame );
     return 0;
 }
+
+/* *************************** ENCODER ********************************** */
+
+
+class audio_writer
+{
+private:
+
+	/* Add an output stream. */
+	AVStream *add_stream(AVFormatContext *oc, AVCodec **codec,
+								enum AVCodecID codec_id)
+	{
+		AVStream *st;
+		AVCodecContext *c;
+		/* find the encoder */
+		*codec = avcodec_find_encoder(codec_id);
+			if (!(*codec)) {
+				fprintf(stderr, "Could not find encoder for '%s'\n",
+					avcodec_get_name(codec_id));
+				exit(1);
+		}
+		st = avformat_new_stream(oc, *codec);
+		if (!st) {
+			fprintf(stderr, "Could not allocate stream\n");
+			exit(1);
+		}
+		st->id = oc->nb_streams-1;
+		c = st->codec;
+		switch ((*codec)->type) {
+			case AVMEDIA_TYPE_AUDIO:
+				st->id = 1;
+				c->sample_fmt = AV_SAMPLE_FMT_S16;
+				c->bit_rate = 64000;
+				sample_rate = c->sample_rate = 8000;
+				n_channels = c->channels = 1;
+				break;
+			case AVMEDIA_TYPE_VIDEO:
+				printf("AVMEDIA_TYPE_VIDEO VIdeo not supported\n"); exit(-1);
+				break;
+			default:
+				break;
+		}
+		/* Some formats want stream headers to be separate. */
+		if (oc->oformat->flags & AVFMT_GLOBALHEADER)
+			c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+		return st;
+	}
+
+	void write_audio_frame(AVFormatContext *oc, AVStream *st)
+	{
+		AVCodecContext *c;
+		AVPacket pkt = { 0 }; // data and size must be 0;
+		AVFrame *frame = avcodec_alloc_frame();
+		int got_packet, ret;
+		av_init_packet(&pkt);
+		c = st->codec;
+		frame->nb_samples = audio_input_frame_size;
+		avcodec_fill_audio_frame(frame, c->channels, c->sample_fmt,
+								 (uint8_t *)samples,
+								 audio_input_frame_size *
+								 av_get_bytes_per_sample(c->sample_fmt) *
+								 c->channels, 1);
+		ret = avcodec_encode_audio2(c, &pkt, frame, &got_packet);
+		if (ret < 0) {
+			fprintf(stderr, "Error encoding audio frame: %i\n",ret);
+			exit(1);
+		}
+		if (!got_packet)
+			return;
+		pkt.stream_index = st->index;
+		/* Write the compressed frame to the media file. */
+		ret = av_interleaved_write_frame(oc, &pkt);
+		if (ret != 0) {
+			fprintf(stderr, "Error while writing audio frame: %i\n",
+					ret);
+			exit(1);
+		}
+		avcodec_free_frame(&frame);
+	}
+	void close_audio(AVFormatContext *oc, AVStream *st)
+	{
+		avcodec_close(st->codec);
+		av_free(samples);
+	}
+	void open_audio(AVFormatContext *oc, AVCodec *codec, AVStream *st)
+	{
+		AVCodecContext *c;
+		int ret;
+		c = st->codec;
+		/* open it */
+		ret = avcodec_open2(c, codec, NULL);
+		if (ret < 0) {
+			fprintf(stderr, "Could not open audio codec: %i\n", ret );
+			exit(1);
+		}
+
+		if (c->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE)
+			audio_input_frame_size = 1024;
+		else
+			audio_input_frame_size = c->frame_size;
+		samples = (int16_t*) av_malloc(audio_input_frame_size *
+		av_get_bytes_per_sample(c->sample_fmt) * c->channels);
+		if (!samples) {
+			fprintf(stderr, "Could not allocate audio samples buffer\n");
+			exit(1);
+		}
+	}
+public:
+	audio_writer( const char *filename )
+	{
+		/* Initialize libavcodec, and register all codecs and formats. */
+		av_register_all();
+		/* allocate the output media context */
+		avformat_alloc_output_context2(&oc, NULL, NULL, filename);
+		if (!oc) {
+			printf("Could not deduce output format from file extension: using MPEG.\n");
+			avformat_alloc_output_context2(&oc, NULL, "mpeg", filename);
+		}
+		if (!oc) {
+			throw std::logic_error("Unable to allocate oc");
+		}
+		fmt = oc->oformat;
+		if (fmt->audio_codec != AV_CODEC_ID_NONE)
+		{
+			audio_st = add_stream(oc, &audio_codec, fmt->audio_codec);
+		}
+		if (audio_st)
+			open_audio(oc, audio_codec, audio_st);
+
+		av_dump_format(oc, 0, filename, 1);
+		/* open the output file, if needed */
+		if (!(fmt->flags & AVFMT_NOFILE)) {
+			int ret = avio_open(&oc->pb, filename, AVIO_FLAG_WRITE);
+			if (ret < 0) {
+				fprintf(stderr, "Could not open '%s': %i\n", filename,
+						ret);
+				throw std::logic_error("Unable to open the file");
+			}
+		}
+		/* Write the stream header, if any. */
+		int ret = avformat_write_header(oc, NULL);
+		if (ret < 0)
+		{
+			fprintf(stderr, "Error occurred when opening output file: %i\n",
+					ret);
+			throw std::logic_error("Unable to open the file 2");
+		}
+		if (frame)
+			frame->pts = 0;
+	}
+	//Write audio data
+	void write_audio_data( )
+	{
+		write_audio_frame( oc, audio_st );
+	}
+	int16_t* get_sample_buf() const
+	{
+		return samples;
+	}
+	size_t get_audio_frame_size() const
+	{
+		return audio_input_frame_size;
+	}
+	int get_channels() const
+	{
+		return n_channels;
+	}
+
+	~audio_writer()
+	{
+		/* Write the trailer, if any. The trailer must be written before you
+		 * close the CodecContexts open when you wrote the header; otherwise
+		 * av_write_trailer() may try to use memory that was freed on
+		 * av_codec_close(). */
+		av_write_trailer(oc);
+		if (audio_st)
+			close_audio(oc, audio_st);
+		if (!(fmt->flags & AVFMT_NOFILE))
+			/* Close the output file. */
+			avio_close(oc->pb);
+		/* free the stream */
+		avformat_free_context(oc);
+	}
+	double get_pts() const
+	{
+		double audio_pts;
+		if (audio_st)
+			audio_pts = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
+		else
+			audio_pts = 0.0;
+		return audio_pts;
+	}
+	int get_samplerate() const
+	{
+		return sample_rate;
+	}
+private:
+	AVFormatContext *oc {};
+	AVOutputFormat *fmt {};
+	AVCodec *audio_codec {} ;
+	AVStream *audio_st {} ;
+	int16_t *samples {} ;
+	int audio_input_frame_size {};
+	AVFrame *frame {};
+	int sample_rate {} ;
+	int n_channels {};
+};
+
+
+#define STREAM_DURATION 200.0
+static float t, tincr, tincr2;
+
+
+
+/* Prepare a 16 bit dummy audio frame of 'frame_size' samples and
+ * 'nb_channels' channels. */
+static void gen_audio_frame(int16_t *samples, int frame_size, int nb_channels)
+{
+	int j, i, v;
+	int16_t *q;
+	q = samples;
+	for (j = 0; j < frame_size; j++)
+	{
+		v = (int)(sin(t) * 10000);
+		for (i = 0; i < nb_channels; i++)
+			*q++ = v;
+		t += tincr;
+		tincr += tincr2;
+	}
+}
+
+
+int encoder_main( const char *filename )
+{
+	class audio_writer ww( filename );
+	/* init signal generator */
+	t = 0;
+	tincr = 2 * M_PI * 110.0 / ww.get_samplerate();
+	/* increment frequency by 110 Hz per second */
+	tincr2 = 2 * M_PI * 110.0 / ww.get_samplerate() / ww.get_samplerate();
+
+	for (;;) {
+		/* Compute current audio and video time. */
+
+		if ( ww.get_pts() >= STREAM_DURATION)
+			break;
+		gen_audio_frame( ww.get_sample_buf(), ww.get_audio_frame_size(), ww.get_channels() );
+		ww.write_audio_data();
+	}
+	return 0;
+}
+
+
+/* *************************** MAIN LOOP ********************************** */
+
+int main(int argc, const char * const *argv )
+{
+	 if(argc < 2)
+	 {
+	    printf("INvalid argument count\n");
+	    return -1;
+	 }
+	 if( argc == 2 )
+	 {
+		 printf("Decode file %s\n", argv[1] );
+		 return decoder_main( argv[1] );
+	 }
+	 else if( argc == 3 || !strcmp( argv[1],"--encode") )
+	 {
+		 if( access( argv[2], R_OK ) == 0 )
+		 {
+			 printf("File %s already exists. Are you sure to overvrite ? [n/Y] ", argv[2]);
+			 char ans = 'n';
+			 scanf( "%c", &ans );
+			 if( !(ans == 'Y' || ans == 'y') )
+			 {
+				 printf("Aborting\n");
+				 return -1;
+			 }
+		 }
+		 printf("Encode file %s\n", argv[2] );
+		 return encoder_main( argv[2] );
+	 }
+	 else
+	 {
+		 printf("Parameters parsing error !!!!!");
+		 return -1;
+	 }
+}
+
+
 
 #else /*ARM defined test only */
 
