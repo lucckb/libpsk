@@ -113,7 +113,7 @@ private:
 	int m_p_tail {};
 	int m_p_head {};
 	static constexpr auto  TX_BUF_SIZE = 256;
-	int m_p_xmit_que[TX_BUF_SIZE];
+	short m_p_xmit_que[TX_BUF_SIZE];
 	bool m_temp_need_shutoff {};
 	bool m_temp_no_squelch_tail {};
 	double m_symbol_rate { 31.25 };
