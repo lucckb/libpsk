@@ -6,7 +6,6 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "psk/modulator.hpp"
-#include "psk/varicode.hpp"
 #include <cmath>
 #include <iostream>
 using namespace std;
@@ -14,6 +13,8 @@ using namespace std;
 namespace ham {
 namespace psk {
 /* ------------------------------------------------------------------------- */
+using namespace tx;
+
 namespace
 {
 	static constexpr auto m_2PI = 8.0 * atan(1.0);
@@ -174,17 +175,7 @@ namespace
 			psk_shapes::P, psk_shapes::MP, PHZ_0,	//present PHZ_270
 			psk_shapes::ZP, psk_shapes::ZP, PHZ_0	//present PHZ_OFF
 		};
-	constexpr auto TXOFF_CODE = -1;			// control codes that can be placed in the input
-	constexpr auto TXON_CODE  = -2;			// queue for various control functions
-	constexpr auto TXTOG_CODE = -3;
 
-	static constexpr unsigned char ConvolutionCodeTable[32] =
-	{
-		2, 1, 3, 0, 3, 0, 2, 1,
-		0, 3, 1, 2, 1, 2, 0, 3,
-		1, 2, 0, 3, 0, 3, 1, 2,
-		3, 0, 2, 1, 2, 1, 3, 0
-	};
 	static constexpr short ct_preamble[] =
 	{
 		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
@@ -213,8 +204,6 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 	m_psk_sec_per_samp = 1.0/sample_freq;
 	m_psk_time = 0.0;
 	m_t = 0.0;
-	m_last_symb = SYM_OFF;
-	m_add_ending_zero = true;
 
 	//TODO convert to array
 	for(int i=0; i<16; i++)
@@ -222,8 +211,6 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 	m_p_psk_tx_i = PSKShapeTbl_Z;
 	m_p_psk_tx_q = PSKShapeTbl_Z;
 	m_present_phase = PHZ_OFF;
-	m_tx_shift_reg = 0;
-	//m_tx_code_word = 0;
 	set_mode( mode::bpsk, baudrate::b31 );
 	set_freqency( tx_freq );
 }
@@ -292,6 +279,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 		}
 
 	}
+	m_encoder.set_mode( (_internal::symbol_encoder::mode)mmode );
 }
 
 /* ------------------------------------------------------------------------- */
@@ -336,10 +324,9 @@ void modulator::put_tx( short txchar )
 //Operator on new samples
 void modulator::operator()( int16_t* sample, size_t len )
 {
-	int symbol;
-	int v = 0;
 	//Amplitude factor
 	constexpr double m_RMSConstant = 22000;
+	int v = 0;
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
 		m_t += m_psk_phase_inc;			// increment radian phase count
@@ -348,27 +335,16 @@ void modulator::operator()( int16_t* sample, size_t len )
 		m_psk_time += m_psk_sec_per_samp;
 		if( m_psk_time >= m_psk_period_update )//if time to update symbol
 		{
+			short ch = 0;
 			m_psk_time -= m_psk_period_update;	//keep time bounded
 			m_ramp = 0;						// time to update symbol
 			m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
-			switch( m_mode )				//get next symbol to send
+			if( m_encoder.eos() )
 			{
-				case mode::bpsk:
-					symbol = get_next_bpsk_symbol();
-					break;
-				case mode::qpsku:
-					symbol = get_next_qpsk_symbol();
-					break;
-				case mode::qpskl:
-					symbol = get_next_qpsk_symbol();
-					//rotate vectors the opposite way
-					if(symbol==SYM_P90) symbol = SYM_M90;
-					else if(symbol==SYM_M90) symbol = SYM_P90;
-					break;
-				case mode::tune:
-					symbol = get_next_tune_symbol();
-					break;
+				ch = get_char();
+				cout << "Get char " << ch << endl;
 			}
+			const int symbol = m_encoder( ch );
 			//get new I/Q ramp tables and next phase
 			m_p_psk_tx_i = PSKPhaseLookupTable[symbol][m_present_phase].iptr;
 			m_p_psk_tx_q = PSKPhaseLookupTable[symbol][m_present_phase].qptr;
@@ -436,7 +412,7 @@ int modulator::get_char()
 			{
 				m_state = state::sending;
 				m_amble_ptr = 0;
-				ch = TXTOG_CODE;
+				ch = tx::TXTOG_CODE;
 			}
 			break;
 		case state::sending:		//if sending text from TX window
@@ -455,125 +431,7 @@ int modulator::get_char()
 	}
 	return( ch );
 }
-/* ------------------------------------------------------------------------- */
-modulator::sym modulator::get_next_bpsk_symbol()
-{
-	int ch;
-	modulator::sym symb = m_last_symb;
-	if( m_tx_shift_reg == 0 )
-	{
-		if( m_add_ending_zero )		// if is end of code
-		{
-			symb = SYM_P180;		// end with a zero
-			m_add_ending_zero = false;
-		}
-		else
-		{
-			ch = get_char();			//get next character to xmit
-			if( ch >=0 )			//if is not a control code
-			{						//get next VARICODE codeword to send
-				_internal::varicode varicode;
-				m_tx_shift_reg = varicode.forward( ch );
-				symb = SYM_P180;	//Start with a zero
-			}
-			else					// is a control code
-			{
-				switch( ch )
-				{
-				case TXON_CODE:
-					symb = SYM_ON;
-					break;
-				case TXTOG_CODE:
-					symb = SYM_P180;
-					break;
-				case TXOFF_CODE:
-					symb = SYM_OFF;
-					break;
-				}
-			}
-		}
-	}
-	else			// is not end of code word so send next bit
-	{
-		if( m_tx_shift_reg&0x8000 )
-			symb = SYM_NOCHANGE;
-		else
-			symb = SYM_P180;
-		m_tx_shift_reg = m_tx_shift_reg<<1;	//point to next bit
-		if( m_tx_shift_reg == 0 )			// if at end of codeword
-			m_add_ending_zero = true;		// need to send a zero nextime
-	}
-	m_last_symb = symb;
-	cout << "SYMB " << symb << endl;
-	return symb;
-}
 
-/* ------------------------------------------------------------------------- */
-modulator::sym modulator::get_next_qpsk_symbol()
-{
-	int ch;
-	modulator::sym symb = (modulator::sym)ConvolutionCodeTable[m_tx_shift_reg&0x1F];	//get next convolution code
-	m_tx_shift_reg = m_tx_shift_reg<<1;
-	if( m_tx_code_word == 0 )			//need to get next codeword
-	{
-		if( m_add_ending_zero )		//if need to add a zero
-		{
-			m_add_ending_zero = false;	//end with a zero
-		}
-		else
-		{
-			ch = get_char();			//get next character to xmit
-			if( ch >=0 )			//if not a control code
-			{						//get next VARICODE codeword to send
-				_internal::varicode varicode;
-				m_tx_code_word = varicode.forward( ch );
-			}
-			else					//is a control code
-			{
-				switch( ch )
-				{
-				case TXON_CODE:
-					symb = SYM_ON;
-					break;
-				case TXTOG_CODE:
-					m_tx_code_word = 0;
-					break;
-				case TXOFF_CODE:
-					symb = SYM_OFF;
-					break;
-				}
-			}
-		}
-	}
-	else
-	{
-		if(m_tx_code_word&0x8000 )
-		{
-			m_tx_shift_reg |= 1;
-		}
-		m_tx_code_word = m_tx_code_word<<1;
-		if(m_tx_code_word == 0)
-			m_add_ending_zero = true;	//need to add another zero
-	}
-	return symb;
-}
-
-/* ------------------------------------------------------------------------- */
-modulator::sym modulator::get_next_tune_symbol()
-{
-	modulator::sym symb;
-	const int ch = get_char();			//get next character to xmit
-	switch( ch )
-	{
-		case TXON_CODE:
-			symb = SYM_ON;
-			break;
-		default:
-			symb = SYM_OFF;
-			break;
-	}
-	return symb;
-}
 /* ------------------------------------------------------------------------- */
 //Clear queue
 void modulator::clear_tx()

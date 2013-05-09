@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "psk/dyn_queue.hpp"
+#include "psk/symbol_encoder.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -31,6 +32,7 @@ public:
 		qpskl,
 		tune,
 	};
+
 	enum class state
 	{
 		off,
@@ -70,15 +72,6 @@ public:
 	{
 		return m_state;
 	}
-private:
-	enum sym {
-		SYM_NOCHANGE,	//Stay the same phase
-		SYM_P90,		//Plus 90  deg
-		SYM_P180,		//Plus 180 deg
-		SYM_M90,		//Minus 90 deg
-		SYM_OFF,		//No output
-		SYM_ON			//constant output
-	};
 
 	static constexpr int m_vect_lookup[6][2] =
 		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
@@ -86,10 +79,9 @@ private:
 private:
 	int get_tx_char();
 	int get_char();
-	modulator::sym get_next_bpsk_symbol();
-	modulator::sym get_next_qpsk_symbol();
-	modulator::sym get_next_tune_symbol();
+
 private:
+	_internal::symbol_encoder m_encoder;
 	const int m_sample_freq;
 	mode m_mode { mode::bpsk };
 	double m_t {};
@@ -102,9 +94,6 @@ private:
 	double m_psk_period_update {};
 	short m_present_phase {};
 	int m_iq_phase_array[20] {};
-	sym m_last_symb {};
-	bool  m_add_ending_zero {};
-	short m_tx_shift_reg {};
 	state m_state;
 	bool m_need_shutoff { true };
 	int m_amble_ptr {};
@@ -113,7 +102,6 @@ private:
 	bool m_temp_need_shutoff {};
 	bool m_temp_no_squelch_tail {};
 	double m_symbol_rate { 31.25 };
-	short m_tx_code_word {};
 };
 
 /* ------------------------------------------------------------------------- */
