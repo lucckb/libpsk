@@ -23,6 +23,51 @@ namespace
 		double* qptr;
 		int	next;
 	};
+
+	struct psk_state
+	{
+		double (*iptr)(double,double);
+		double (*qptr)(double,double);
+		int next;
+	};
+	namespace psk_shapes
+	{
+		//zero shape
+		double Z( double, double )
+		{
+			return 0;
+		}
+		//Plus one shape
+		double P( double, double )
+		{
+			return 1;
+		}
+		//Minus one shape
+		double M( double, double )
+		{
+			return -1;
+		}
+		double PM( double angle, double ramp )
+		{
+			return std::cos( angle*m_2PI/(ramp*2) );
+		}
+		double MP( double angle, double ramp )
+		{
+			return -std::cos( angle*m_2PI/(ramp*2) );
+		}
+		double PZ( double angle, double ramp )
+		{
+			return (angle<ramp/2)?(std::cos( angle*m_2PI/(ramp*2))):(0);
+		}
+		double MZ(double angle, double ramp)
+		{
+			return (angle<ramp/2)?(-std::cos(angle*m_2PI/(ramp*2))):(0);
+		}
+		double ZP(double angle, double ramp)
+		{
+			return (angle<ramp/2)?(0):(-std::cos(angle*m_2PI/(ramp*2)));
+		}
+	}
 	constexpr int  PHZ_0 = 0;			//specify various signal phase states
 	constexpr int  PHZ_90  = 1;
 	constexpr int  PHZ_180 = 2;
@@ -84,6 +129,51 @@ namespace
 		PSKShapeTbl_P, PSKShapeTbl_MP, PHZ_0,	//present PHZ_270
 		PSKShapeTbl_ZP, PSKShapeTbl_ZP, PHZ_0	//present PHZ_OFF
 	};
+	static constexpr psk_state psk_phase_lookup_table[6][5]=
+		{
+		// SYMBOL = 0 = SYM_NOCHANGE
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::P, psk_shapes::P, PHZ_0,	//present PHZ_0
+			psk_shapes::M, psk_shapes::P, PHZ_90,	//present PHZ_90
+			psk_shapes::M, psk_shapes::M, PHZ_180,	//present PHZ_180
+			psk_shapes::P, psk_shapes::M, PHZ_270,	//present PHZ_270
+			psk_shapes::Z, psk_shapes::Z, PHZ_OFF,	//present PHZ_OFF
+		// SYMBOL = 1 = SYM_P90 = Advance 90 degrees
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::PM, psk_shapes::P, PHZ_90,	//present PHZ_0
+			psk_shapes::M, psk_shapes::PM, PHZ_180,	//present PHZ_90
+			psk_shapes::MP, psk_shapes::M, PHZ_270,	//present PHZ_180
+			psk_shapes::P, psk_shapes::MP, PHZ_0,	//present PHZ_270
+			psk_shapes::ZP, psk_shapes::ZP, PHZ_0,	//present PHZ_OFF
+		// SYMBOL = 2 = SYM_P180 = Advance 180 degrees
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::PM, psk_shapes::PM, PHZ_180,//present PHZ_0
+			psk_shapes::MP, psk_shapes::PM, PHZ_270,//present PHZ_90
+			psk_shapes::MP, psk_shapes::MP, PHZ_0,	//present PHZ_180
+			psk_shapes::PM, psk_shapes::MP, PHZ_90,	//present PHZ_270
+			psk_shapes::ZP, psk_shapes::ZP, PHZ_0,	//present PHZ_OFF
+		// SYMBOL = 3 = SYM_M90	= retard 90 degrees
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::P, psk_shapes::PM, PHZ_270,	//present PHZ_0
+			psk_shapes::MP, psk_shapes::P, PHZ_0,	//present PHZ_90
+			psk_shapes::M, psk_shapes::MP, PHZ_90,	//present PHZ_180
+			psk_shapes::PM, psk_shapes::M, PHZ_180,	//present PHZ_270
+			psk_shapes::ZP, psk_shapes::ZP, PHZ_0,	//present PHZ_OFF
+		// SYMBOL = 4 = SYM_OFF
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::PZ, psk_shapes::PZ, PHZ_OFF,//present PHZ_0
+			psk_shapes::MZ, psk_shapes::PZ, PHZ_OFF,//present PHZ_90
+			psk_shapes::MZ, psk_shapes::MZ, PHZ_OFF,//present PHZ_180
+			psk_shapes::PZ, psk_shapes::MZ, PHZ_OFF,//present PHZ_270
+			psk_shapes::Z,  psk_shapes::Z, PHZ_OFF,	//present PHZ_OFF
+		// SYMBOL = 5 = SYM_ON
+		//   I ramp shape     Q ramp shape     Next Phase
+			psk_shapes::P,  psk_shapes::P, PHZ_0,	//present PHZ_0
+			psk_shapes::MP, psk_shapes::P, PHZ_0,	//present PHZ_90
+			psk_shapes::MP, psk_shapes::MP, PHZ_0,	//present PHZ_180
+			psk_shapes::P, psk_shapes::MP, PHZ_0,	//present PHZ_270
+			psk_shapes::ZP, psk_shapes::ZP, PHZ_0	//present PHZ_OFF
+		};
 	constexpr auto TXOFF_CODE = -1;			// control codes that can be placed in the input
 	constexpr auto TXON_CODE  = -2;			// queue for various control functions
 	constexpr auto TXTOG_CODE = -3;
@@ -370,7 +460,6 @@ modulator::sym modulator::get_next_bpsk_symbol()
 {
 	int ch;
 	modulator::sym symb = m_last_symb;
-	_internal::varicode varicode;
 	if( m_tx_shift_reg == 0 )
 	{
 		if( m_add_ending_zero )		// if is end of code
@@ -383,6 +472,7 @@ modulator::sym modulator::get_next_bpsk_symbol()
 			ch = get_char();			//get next character to xmit
 			if( ch >=0 )			//if is not a control code
 			{						//get next VARICODE codeword to send
+				_internal::varicode varicode;
 				m_tx_shift_reg = varicode.forward( ch );
 				symb = SYM_P180;	//Start with a zero
 			}
