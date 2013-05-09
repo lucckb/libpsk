@@ -316,7 +316,8 @@ private:
 	void write_audio_frame(AVFormatContext *oc, AVStream *st)
 	{
 		AVCodecContext *c;
-		AVPacket pkt = { 0 }; // data and size must be 0;
+		AVPacket pkt;
+        memset(&pkt, 0, sizeof pkt );
 		AVFrame *frame = avcodec_alloc_frame();
 		int got_packet, ret;
 		av_init_packet(&pkt);
@@ -344,12 +345,12 @@ private:
 		}
 		avcodec_free_frame(&frame);
 	}
-	void close_audio(AVFormatContext *oc, AVStream *st)
+	void close_audio(AVFormatContext * /*oc*/, AVStream *st)
 	{
 		avcodec_close(st->codec);
 		av_free(samples);
 	}
-	void open_audio(AVFormatContext *oc, AVCodec *codec, AVStream *st)
+	void open_audio(AVFormatContext * /*oc*/, AVCodec *codec, AVStream *st)
 	{
 		AVCodecContext *c;
 		int ret;
