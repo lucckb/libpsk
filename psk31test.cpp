@@ -481,17 +481,23 @@ int encoder_main( const char *filename )
 {
 	class audio_writer ww( filename );
 	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024 );
-	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst enkodowany";
+	//mod.set_auto_shutoff( false );
+	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
 	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
-	for(size_t i=0;i<sizeof txt - 1; i++)
+	for(size_t i=0;i<sizeof txt -1; i++)
 		mod.put_tx( txt[i] );
+	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);
+	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);
+	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);
+	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);
+	//mod.put_tx(ham::psk::ctrl_chars::TXOFF_CODE);
 	for (;;) {
 		/* Compute current audio and video time. */
 		mod( ww.get_sample_buf(), ww.get_audio_frame_size() );
-		//gen_audio_frame( ww.get_sample_buf(), ww.get_audio_frame_size(), ww.get_channels() );
 		ww.write_audio_data();
 		if( mod.get_state() == ham::psk::modulator::state::off )
 			break;
+		if( ww.get_pts() > 30 ) break;
 	}
 	return 0;
 }

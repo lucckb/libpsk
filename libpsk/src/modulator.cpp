@@ -183,13 +183,17 @@ namespace
 		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
 		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, 0
 	};
+
+
 	static constexpr short ct_postamble[] =
 	{
+
 		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
 		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
 		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
 		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, 0
 	};
+
 }
 /* ------------------------------------------------------------------------- */
 //Vect lookup table
@@ -321,6 +325,10 @@ void modulator::put_tx( short txchar )
 	//LeaveCriticalSection(&m_CriticalSection);
 }
 /* ------------------------------------------------------------------------- */
+//FIXME temporary
+#define WRAP(X) #X
+#define HANDLE_PRINT( X )  case symbol_encoder::sym::X: cout << WRAP(X) << " ";  break
+
 //Operator on new samples
 void modulator::operator()( int16_t* sample, size_t len )
 {
@@ -342,9 +350,22 @@ void modulator::operator()( int16_t* sample, size_t len )
 			if( m_encoder.eos() )
 			{
 				ch = get_char();
-				cout << "Get char " << ch << endl;
 			}
 			const int symbol = m_encoder( ch );
+			//Temporary
+			{
+				using namespace _internal;
+				switch( symbol )
+				{
+					HANDLE_PRINT( SYM_NOCHANGE );
+					HANDLE_PRINT( SYM_P90 );
+					HANDLE_PRINT( SYM_P180 );
+					HANDLE_PRINT(SYM_M90);
+					HANDLE_PRINT(SYM_OFF);
+					HANDLE_PRINT(SYM_ON);
+				}
+				cout << char(ch) << " " << ch << endl;
+			}
 			//get new I/Q ramp tables and next phase
 			m_p_psk_tx_i = PSKPhaseLookupTable[symbol][m_present_phase].iptr;
 			m_p_psk_tx_q = PSKPhaseLookupTable[symbol][m_present_phase].qptr;
