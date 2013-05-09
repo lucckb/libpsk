@@ -481,7 +481,7 @@ int encoder_main( const char *filename )
 {
 	class audio_writer ww( filename );
 	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024 );
-	const char txt[] = "Ala ma kota";
+	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst enkodowany";
 	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
 	for(size_t i=0;i<sizeof txt - 1; i++)
 		mod.put_tx( txt[i] );
