@@ -480,7 +480,7 @@ private:
 int encoder_main( const char *filename )
 {
 	class audio_writer ww( filename );
-	ham::psk::modulator mod( ww.get_samplerate(),  2125 );
+	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024 );
 	const char txt[] = "Ala ma kota";
 	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
 	for(size_t i=0;i<sizeof txt - 1; i++)

@@ -95,6 +95,20 @@ namespace
 		1, 2, 0, 3, 0, 3, 1, 2,
 		3, 0, 2, 1, 2, 1, 3, 0
 	};
+	static constexpr short ct_preamble[] =
+	{
+		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
+		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
+		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
+		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, 0
+	};
+	static constexpr short ct_postamble[] =
+	{
+		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
+		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
+		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
+		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, 0
+	};
 }
 /* ------------------------------------------------------------------------- */
 //Vect lookup table
@@ -102,8 +116,8 @@ constexpr int modulator::m_vect_lookup[6][2];
 
 /* ------------------------------------------------------------------------- */
 //Modulator
-modulator::modulator( int sample_freq, int tx_freq )
-	: m_sample_freq( sample_freq )
+modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
+	: m_sample_freq( sample_freq ),  m_chqueue( char_que_len )
 {
 	m_psk_phase_inc = m_2PI * tx_freq/sample_freq;		//carrier frequency
 	m_psk_sec_per_samp = 1.0/sample_freq;
@@ -115,24 +129,15 @@ modulator::modulator( int sample_freq, int tx_freq )
 	//TODO convert to array
 	for(int i=0; i<16; i++)
 		m_iq_phase_array[i] = 1;
-
-		int i = 0;
-		while(i<32)		//create post/preamble tables
-		{
-			m_preamble[i] = TXTOG_CODE;
-			m_postamble[i++] = TXON_CODE;
-		}
-		m_preamble[i] = 0;		// null terminate these tables
-		m_postamble[i] = 0;
-
-		m_p_psk_tx_i = PSKShapeTbl_Z;
-		m_p_psk_tx_q = PSKShapeTbl_Z;
-		m_present_phase = PHZ_OFF;
-		m_tx_shift_reg = 0;
-		//m_tx_code_word = 0;
-		set_mode( mode::bpsk, baudrate::b31 );
-		set_freqency( tx_freq );
+	m_p_psk_tx_i = PSKShapeTbl_Z;
+	m_p_psk_tx_q = PSKShapeTbl_Z;
+	m_present_phase = PHZ_OFF;
+	m_tx_shift_reg = 0;
+	//m_tx_code_word = 0;
+	set_mode( mode::bpsk, baudrate::b31 );
+	set_freqency( tx_freq );
 }
+
 /* ------------------------------------------------------------------------- */
 //Set frequency
 void  modulator::set_freqency( int frequency )
@@ -201,7 +206,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 
 /* ------------------------------------------------------------------------- */
 //Set char into the modulator
-void modulator::put_tx( char txchar )
+void modulator::put_tx( short txchar )
 {
 	constexpr char BACK_SPACE_CODE = 0x08;
 	//EnterCriticalSection(&m_CriticalSection);
@@ -226,24 +231,13 @@ void modulator::put_tx( char txchar )
 	else		//is a character to xmit
 #endif
 	{
-		if( (txchar != BACK_SPACE_CODE) || (m_p_head==m_p_tail) )
+		if( (txchar != BACK_SPACE_CODE) || m_chqueue.empty() )
 		{
-			m_p_xmit_que[m_p_head++] = txchar;
-			if( m_p_head >= TX_BUF_SIZE )
-				m_p_head = 0;
+			m_chqueue.push( txchar );
 		}
 		else	//see if is a backspace and if can delete it in the queue
 		{
-			if(--m_p_head < 0 )		//look at last character in queue
-				m_p_head = 0;
-			if( m_p_xmit_que[m_p_head] == BACK_SPACE_CODE)
-			{								//if another backspace, leave it there
-				if(++m_p_head >= TX_BUF_SIZE )
-					m_p_head = 0;
-				m_p_xmit_que[m_p_head++] = txchar;
-				if( m_p_head >= TX_BUF_SIZE )
-					m_p_head = 0;
-			}
+			m_chqueue.pop();
 		}
 	}
 	//LeaveCriticalSection(&m_CriticalSection);
@@ -258,7 +252,6 @@ void modulator::operator()( int16_t* sample, size_t len )
 	constexpr double m_RMSConstant = 22000;
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
-		cout << "ramp " << m_ramp << std::endl;
 		m_t += m_psk_phase_inc;			// increment radian phase count
 		// create sample from sin/cos and shape tables
 		sample[i] = m_RMSConstant*( m_p_psk_tx_i[m_ramp]* sin( m_t ) + m_p_psk_tx_q[m_ramp++]* cos( m_t ) );
@@ -301,16 +294,9 @@ void modulator::operator()( int16_t* sample, size_t len )
 /* ------------------------------------------------------------------------- */
 int modulator::get_tx_char()
 {
-	int ch;
-
-	if( m_p_head != m_p_tail )	//if something in Queue
-	{
-		ch = m_p_xmit_que[m_p_tail++] & 0x00FF;
-		if( m_p_tail >= TX_BUF_SIZE )
-			m_p_tail = 0;
-	}
-	else
-		ch = TXTOG_CODE;		// if que is empty return TXTOG_CODE
+	short ch;
+	if( m_chqueue.pop( ch ) )
+		ch = TXTOG_CODE;
 	if(m_temp_need_shutoff)
 	{
 		m_temp_need_shutoff = false;
@@ -321,7 +307,6 @@ int modulator::get_tx_char()
 		m_temp_no_squelch_tail = false;
 		m_no_squelch_tail = true;
 	}
-
 	return ch;
 }
 /* ------------------------------------------------------------------------- */
@@ -347,7 +332,7 @@ int modulator::get_char()
 			}
 			break;
 		case state::postamble:		// ending sequence
-			if( !(ch = m_postamble[m_amble_ptr++] ) || m_no_squelch_tail)
+			if( !(ch = ct_postamble[m_amble_ptr++] ) || m_no_squelch_tail)
 			{
 				m_no_squelch_tail = false;
 				m_state = state::off;
@@ -357,7 +342,7 @@ int modulator::get_char()
 			}
 			break;
 		case state::preamble:			//starting sequence
-			if( !(ch = m_preamble[m_amble_ptr++] ))
+			if( !(ch = ct_preamble[m_amble_ptr++] ))
 			{
 				m_state = state::sending;
 				m_amble_ptr = 0;
@@ -504,21 +489,17 @@ modulator::sym modulator::get_next_tune_symbol()
 void modulator::clear_tx()
 {
 	//EnterCriticalSection(&m_CriticalSection);
-	m_p_tail = m_p_head = 0;
+	m_chqueue.erase();
 	//LeaveCriticalSection(&m_CriticalSection);
 	m_no_squelch_tail = false;
 	m_temp_need_shutoff = false;
 	m_temp_no_squelch_tail = false;
 }
+/* ------------------------------------------------------------------------- */
 //Get number of chars remaining
 size_t modulator::size_tx() const
 {
-	//EnterCriticalSection(&m_CriticalSection);
-	int num = m_p_head - m_p_tail;
-	//LeaveCriticalSection(&m_CriticalSection);
-	if( num < 0 )
-		num = num + TX_BUF_SIZE;
-	return num;
+	return m_chqueue.size();
 }
 /* ------------------------------------------------------------------------- */
 } /* namespace psk */

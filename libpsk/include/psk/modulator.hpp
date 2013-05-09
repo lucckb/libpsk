@@ -11,6 +11,7 @@
 /* ------------------------------------------------------------------------- */
 #include <cstddef>
 #include <cstdint>
+#include "psk/dyn_queue.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -46,11 +47,11 @@ public:
 		b125
 	};
 	//Constructor
-	explicit modulator( int sample_freq, int tx_freq );
+	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
 	//Operator on new samples
 	void operator()( int16_t* sample, size_t len );
 	//Set char into the modulator
-	void put_tx( char c );
+	void put_tx( short c );
 	//Clear queue
 	void clear_tx();
 	//Set frequency
@@ -107,13 +108,8 @@ private:
 	state m_state;
 	bool m_need_shutoff { true };
 	int m_amble_ptr {};
-	int m_postamble[33] {};
-	int m_preamble[33] {};
 	bool m_no_squelch_tail {};
-	int m_p_tail {};
-	int m_p_head {};
-	static constexpr auto  TX_BUF_SIZE = 256;
-	short m_p_xmit_que[TX_BUF_SIZE];
+	fnd::dyn_queue<short> m_chqueue;
 	bool m_temp_need_shutoff {};
 	bool m_temp_no_squelch_tail {};
 	double m_symbol_rate { 31.25 };
