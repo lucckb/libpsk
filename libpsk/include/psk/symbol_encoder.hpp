@@ -9,7 +9,7 @@
 #define PSK_SYMBOL_ENCODER_HPP_
 
 /* ------------------------------------------------------------------------- */
-#include "psk/modulator_codes.hpp"
+#include "psk/control_chars.hpp"
 #include "psk/varicode.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
@@ -113,9 +113,9 @@ private:
 				{
 					switch( ch )
 					{
-					case tx::TXON_CODE: symb = SYM_ON;    break;
-					case tx::TXTOG_CODE: symb = SYM_P180; break;
-					case tx::TXOFF_CODE: symb = SYM_OFF;  break;
+					case ctrl_chars::TXON_CODE: symb = SYM_ON;    break;
+					case ctrl_chars::TXTOG_CODE: symb = SYM_P180; break;
+					case ctrl_chars::TXOFF_CODE: symb = SYM_OFF;  break;
 					}
 				}
 			}
@@ -155,9 +155,9 @@ private:
 				{
 					switch( ch )
 					{
-					case tx::TXON_CODE: symb = SYM_ON; 	 		break;
-					case tx::TXTOG_CODE: m_tx_code_word = 0; 	break;
-					case tx::TXOFF_CODE: symb = SYM_OFF; 		break;
+					case ctrl_chars::TXON_CODE: symb = SYM_ON; 	 		break;
+					case ctrl_chars::TXTOG_CODE: m_tx_code_word = 0; 	break;
+					case ctrl_chars::TXOFF_CODE: symb = SYM_OFF; 		break;
 					}
 				}
 			}
@@ -178,7 +178,7 @@ private:
 	{
 		sym symb;
 		//const int ch = get_char();			//get next character to xmit
-		return ( ch == tx::TXON_CODE )?(SYM_ON):(SYM_OFF);
+		return ( ch == ctrl_chars::TXON_CODE )?(SYM_ON):(SYM_OFF);
 		return symb;
 	}
 private:

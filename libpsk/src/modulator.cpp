@@ -13,7 +13,6 @@ using namespace std;
 namespace ham {
 namespace psk {
 /* ------------------------------------------------------------------------- */
-using namespace tx;
 
 namespace
 {
@@ -176,19 +175,20 @@ namespace
 			psk_shapes::ZP, psk_shapes::ZP, PHZ_0	//present PHZ_OFF
 		};
 
+	namespace ch = ctrl_chars;
 	static constexpr short ct_preamble[] =
 	{
-		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
-		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
-		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE,
-		TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, TXTOG_CODE, 0
+		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
+		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
+		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
+		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, 0
 	};
 	static constexpr short ct_postamble[] =
 	{
-		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
-		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
-		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE,
-		TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, TXON_CODE, 0
+		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
+		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
+		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
+		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, 0
 	};
 }
 /* ------------------------------------------------------------------------- */
@@ -362,7 +362,7 @@ int modulator::get_tx_char()
 {
 	short ch;
 	if( m_chqueue.pop( ch ) )
-		ch = TXTOG_CODE;
+		ch = ch::TXTOG_CODE;
 	if(m_temp_need_shutoff)
 	{
 		m_temp_need_shutoff = false;
@@ -383,17 +383,17 @@ int modulator::get_char()
 	switch( m_state )
 	{
 		case state::off:		//is receiving
-			ch = TXOFF_CODE;		//else turn off
+			ch = ch::TXOFF_CODE;		//else turn off
 			m_need_shutoff = false;
 			break;
 		case state::tune:
-			ch = TXON_CODE;				// steady carrier
+			ch = ch::TXON_CODE;				// steady carrier
 			if(	m_need_shutoff)
 			{
 
 				m_state = state::off;
 				m_amble_ptr = 0;
-				ch = TXOFF_CODE;
+				ch = ch::TXOFF_CODE;
 				m_need_shutoff = false;
 			}
 			break;
@@ -403,7 +403,7 @@ int modulator::get_char()
 				m_no_squelch_tail = false;
 				m_state = state::off;
 				m_amble_ptr = 0;
-				ch = TXOFF_CODE;
+				ch = ch::TXOFF_CODE;
 				m_need_shutoff = false;
 			}
 			break;
@@ -412,12 +412,12 @@ int modulator::get_char()
 			{
 				m_state = state::sending;
 				m_amble_ptr = 0;
-				ch = tx::TXTOG_CODE;
+				ch = ctrl_chars::TXTOG_CODE;
 			}
 			break;
 		case state::sending:		//if sending text from TX window
 			ch = get_tx_char();
-			if(	(ch == TXTOG_CODE) && m_need_shutoff)
+			if(	(ch == ctrl_chars::TXTOG_CODE) && m_need_shutoff)
 			{
 				m_state = state::postamble;
 			}
