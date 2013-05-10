@@ -340,7 +340,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 			m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
 			if( m_encoder.eos() )
 			{
-				ch = get_char();
+				ch = update_state_chr();
 			}
 			const int symbol = m_encoder( ch );
 			//Temporary
@@ -391,7 +391,7 @@ int modulator::get_tx_char()
 	return ch;
 }
 /* ------------------------------------------------------------------------- */
-int modulator::get_char()
+int modulator::update_state_chr()
 {
 	int ch = 0;
 	// static test = '0';  //AA6YQ - not referenced

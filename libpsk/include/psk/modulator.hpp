@@ -81,7 +81,7 @@ public:
 
 private:
 	int get_tx_char();
-	int get_char();
+	int update_state_chr();
 
 private:
 	_internal::symbol_encoder m_encoder;
