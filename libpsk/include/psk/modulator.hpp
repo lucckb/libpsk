@@ -75,9 +75,11 @@ public:
 
 	static constexpr int m_vect_lookup[6][2] =
 		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
+	//Preamble and postamble char defs and len
 	static constexpr short C_preamble_chr =  ctrl_chars::TXTOG_CODE;
 	static constexpr short C_postamble_chr = ctrl_chars::TXTOG_CODE;
 	static constexpr auto  C_amble_size = 32;
+	//Rate scale for the symbol rate
 	static constexpr unsigned RATE_SCALE = 100;
 
 private:
