@@ -187,8 +187,6 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 	: m_sample_freq( sample_freq ),  m_chqueue( char_que_len )
 {
 	m_psk_phase_inc = m_2PI * tx_freq/sample_freq;		//carrier frequency
-	m_psk_sec_per_samp = 1.0/sample_freq;
-	m_psk_time = 0.0;
 	m_t = 0.0;
 
 	//TODO convert to array
@@ -219,18 +217,16 @@ void modulator::set_mode( mode mmode, baudrate baud )
 	m_ramp = 0;
 	if( baud == baudrate::b63 )
 	{
-		m_symbol_rate = 62.5;
+		m_symbol_rate = 6250;
 	}
 	else if( baud == baudrate::b125 )
 	{
-		m_symbol_rate = 125;
+		m_symbol_rate = 12500;
 	}
 	else
 	{
-		m_symbol_rate = 31.25;
+		m_symbol_rate = 3125;
 	}
-
-	m_psk_period_update = 1.0/m_symbol_rate;	//symbol period
 	switch( mmode )
 	{
 		case mode::bpsk:
@@ -246,7 +242,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 			break;
 	}
 	//enerate cosine ramp envelope lookup tables
-	const size_t ramp_size =  (int)(m_sample_freq/m_symbol_rate); //  number of envelope ramp steps per symbol
+	const size_t ramp_size =  (int)(m_sample_freq*100/m_symbol_rate); //  number of envelope ramp steps per symbol
 	for( size_t i=0; i<MAXRAMP_SIZE; i++)
 	{
 		PSKShapeTbl_Z[i] = 0.0;
@@ -269,6 +265,8 @@ void modulator::set_mode( mode mmode, baudrate baud )
 		}
 
 	}
+	m_psk_period_update = (m_sample_freq*100)/ m_symbol_rate;
+	//TODO: Fix this
 	m_encoder.set_mode( (_internal::symbol_encoder::mode)mmode );
 }
 
@@ -322,7 +320,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 	//Amplitude factor
 	constexpr double m_RMSConstant = 22000;
 	int v = 0;
-	const auto ramp_size =  (m_sample_freq/m_symbol_rate);
+	const auto ramp_size =  (m_sample_freq*100/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
 		m_t += m_psk_phase_inc;			// increment radian phase count
@@ -332,13 +330,13 @@ void modulator::operator()( int16_t* sample, size_t len )
 		assert(  m_p_psk_tx_i(m_ramp, ramp_size ) == tmp_i[m_ramp] );
 		assert(  m_p_psk_tx_q(m_ramp, ramp_size ) == tmp_q[m_ramp] );
 		m_ramp++;
-		m_psk_time += m_psk_sec_per_samp;
-		if( m_psk_time >= m_psk_period_update )//if time to update symbol
+		//cout << m_psk_sample_cnt << " " << m_psk_period_update << endl;
+		if( ++m_psk_sample_cnt >= m_psk_period_update )//if time to update symbol
 		{
-			short ch = 0;
-			m_psk_time -= m_psk_period_update;	//keep time bounded
+			m_psk_sample_cnt = 0;
 			m_ramp = 0;						// time to update symbol
 			m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
+			short ch = 0;
 			if( m_encoder.eos() )
 			{
 				ch = update_state_chr();

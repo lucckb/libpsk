@@ -95,9 +95,7 @@ private:
 	double *tmp_i;	//TODO: Temporary remove later
 	double *tmp_q;	//TODO: Temporary remove later
 	int m_ramp {};
-	double m_psk_sec_per_samp {};
-	double m_psk_time {};
-	double m_psk_period_update {};
+	size_t m_psk_sample_cnt {};
 	short m_present_phase {};
 	int m_iq_phase_array[16] {};
 	state m_state;
@@ -107,7 +105,8 @@ private:
 	fnd::dyn_queue<short> m_chqueue;
 	bool m_temp_need_shutoff {};
 	bool m_temp_no_squelch_tail {};
-	double m_symbol_rate { 31.25 };
+	short m_symbol_rate { 3125 };
+	unsigned m_psk_period_update;
 };
 
 /* ------------------------------------------------------------------------- */
