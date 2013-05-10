@@ -450,7 +450,7 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
         m_fir1_dec(
-        	m_nco_mix( samples[smpl], m_nco_phzinc + m_afc.get_freq_error() )
+        	m_nco_mix.mix_cos_r_sin_i( samples[smpl], m_nco_phzinc + m_afc.get_freq_error() )
         );
 		//decimate by 4 filter
 		if( ( (++m_sample_cnt)%4 ) == 0 )	//calc first decimation filter every 4 samples

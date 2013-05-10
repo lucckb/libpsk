@@ -13,6 +13,7 @@
 #include <cstdint>
 #include "psk/dyn_queue.hpp"
 #include "psk/symbol_encoder.hpp"
+#include "dsp/nco_mixer.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -72,7 +73,7 @@ public:
 	{
 		return m_state;
 	}
-
+	//Vector lookup table
 	static constexpr int m_vect_lookup[6][2] =
 		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
 	//Preamble and postamble char defs and len
@@ -81,6 +82,8 @@ public:
 	static constexpr auto  C_amble_size = 32;
 	//Rate scale for the symbol rate
 	static constexpr unsigned RATE_SCALE = 100;
+	//PI2I wrap arround
+	static constexpr int PI2I = 1<<15;
 
 private:
 	//Get tx char from queue
@@ -91,13 +94,13 @@ private:
 	_internal::symbol_encoder m_encoder;
 	const int m_sample_freq;
 	mode m_mode { mode::bpsk };
-	double m_t {};
-	double m_psk_phase_inc;
+	int m_psk_phase_inc;
 	double (*m_p_psk_tx_i)( double, double) {};
 	double (*m_p_psk_tx_q )( double, double ) {};
 	double *tmp_i;	//TODO: Temporary remove later
 	double *tmp_q;	//TODO: Temporary remove later
 	int m_ramp {};
+	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	size_t m_psk_sample_cnt {};
 	short m_present_phase {};
 	int m_iq_phase_array[16] {};

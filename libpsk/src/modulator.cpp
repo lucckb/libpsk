@@ -186,8 +186,8 @@ constexpr int modulator::m_vect_lookup[6][2];
 modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 	: m_sample_freq( sample_freq ),  m_chqueue( char_que_len )
 {
-	m_psk_phase_inc = m_2PI * tx_freq/sample_freq;		//carrier frequency
-	m_t = 0.0;
+	m_psk_phase_inc = (PI2I *tx_freq)/sample_freq;		//carrier frequency
+	//m_t = 0.0;
 
 	//TODO convert to array
 	for(int i=0; i<16; i++)
@@ -207,7 +207,7 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 //Set frequency
 void  modulator::set_freqency( int frequency )
 {
-	m_psk_phase_inc = m_2PI * frequency/m_sample_freq;
+	m_psk_phase_inc = (PI2I*frequency)/m_sample_freq;
 }
 /* ------------------------------------------------------------------------- */
 //Set mode
@@ -323,10 +323,12 @@ void modulator::operator()( int16_t* sample, size_t len )
 	const auto ramp_size =  (m_sample_freq*RATE_SCALE/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
-		m_t += m_psk_phase_inc;			// increment radian phase count
+		//m_t += m_psk_phase_inc;			// increment radian phase count
 		// create sample from sin/cos and shape tables
 		//sample[i] = m_RMSConstant*( m_p_psk_tx_i[m_ramp]* sin( m_t ) + m_p_psk_tx_q[m_ramp++]* cos( m_t ) );
-		sample[i] = m_RMSConstant*( m_p_psk_tx_i(m_ramp, ramp_size ) * sin( m_t ) + m_p_psk_tx_q(m_ramp, ramp_size )* cos( m_t ) );
+		//sample[i] = m_RMSConstant*( m_p_psk_tx_i(m_ramp, ramp_size ) * sin( m_t ) + m_p_psk_tx_q(m_ramp, ramp_size )* cos( m_t ) );
+		sample[i] = ( m_nco_mix.mix_sin( m_p_psk_tx_i(m_ramp, ramp_size )*22000, 0 )  + m_nco_mix.mix_cos(m_p_psk_tx_q(m_ramp, ramp_size )*22000, m_psk_phase_inc) );
+		cout << sample[i] << endl;
 		assert(  m_p_psk_tx_i(m_ramp, ramp_size ) == tmp_i[m_ramp] );
 		assert(  m_p_psk_tx_q(m_ramp, ramp_size ) == tmp_q[m_ramp] );
 		m_ramp++;
@@ -335,7 +337,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 		{
 			m_psk_sample_cnt = 0;
 			m_ramp = 0;						// time to update symbol
-			m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
+			//m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
 			short ch = 0;
 			if( m_encoder.eos() )
 			{
