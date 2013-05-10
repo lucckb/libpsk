@@ -75,6 +75,9 @@ public:
 
 	static constexpr int m_vect_lookup[6][2] =
 		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
+	static constexpr short C_preamble_chr =  ctrl_chars::TXTOG_CODE;
+	static constexpr short C_postamble_chr = ctrl_chars::TXTOG_CODE;
+	static constexpr auto  C_amble_size = 32;
 
 private:
 	int get_tx_char();

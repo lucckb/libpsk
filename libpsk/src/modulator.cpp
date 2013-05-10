@@ -175,25 +175,6 @@ namespace
 			psk_shapes::ZP, psk_shapes::ZP, PHZ_0	//present PHZ_OFF
 		};
 
-	namespace ch = ctrl_chars;
-	static constexpr short ct_preamble[] =
-	{
-		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
-		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
-		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE,
-		ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, ch::TXTOG_CODE, 0
-	};
-
-
-	static constexpr short ct_postamble[] =
-	{
-
-		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
-		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
-		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE,
-		ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, ch::TXON_CODE, 0
-	};
-
 }
 /* ------------------------------------------------------------------------- */
 //Vect lookup table
@@ -383,7 +364,7 @@ int modulator::get_tx_char()
 {
 	short ch;
 	if( m_chqueue.pop( ch ) )
-		ch = ch::TXTOG_CODE;
+		ch = ctrl_chars::TXTOG_CODE;
 	if(m_temp_need_shutoff)
 	{
 		m_temp_need_shutoff = false;
@@ -404,36 +385,44 @@ int modulator::get_char()
 	switch( m_state )
 	{
 		case state::off:		//is receiving
-			ch = ch::TXOFF_CODE;		//else turn off
+			ch = ctrl_chars::TXOFF_CODE;		//else turn off
 			m_need_shutoff = false;
 			break;
 		case state::tune:
-			ch = ch::TXON_CODE;				// steady carrier
+			ch = ctrl_chars::TXON_CODE;				// steady carrier
 			if(	m_need_shutoff)
 			{
 
 				m_state = state::off;
 				m_amble_ptr = 0;
-				ch = ch::TXOFF_CODE;
+				ch = ctrl_chars::TXOFF_CODE;
 				m_need_shutoff = false;
 			}
 			break;
 		case state::postamble:		// ending sequence
-			if( !(ch = ct_postamble[m_amble_ptr++] ) || m_no_squelch_tail)
+			if( ++m_amble_ptr>C_amble_size  || m_no_squelch_tail)
 			{
 				m_no_squelch_tail = false;
 				m_state = state::off;
 				m_amble_ptr = 0;
-				ch = ch::TXOFF_CODE;
+				ch = ctrl_chars::TXOFF_CODE;
 				m_need_shutoff = false;
+			}
+			else
+			{
+				ch = C_postamble_chr;
 			}
 			break;
 		case state::preamble:			//starting sequence
-			if( !(ch = ct_preamble[m_amble_ptr++] ))
+			if( ++m_amble_ptr>C_amble_size )
 			{
 				m_state = state::sending;
 				m_amble_ptr = 0;
 				ch = ctrl_chars::TXTOG_CODE;
+			}
+			else
+			{
+				ch = C_preamble_chr;
 			}
 			break;
 		case state::sending:		//if sending text from TX window
