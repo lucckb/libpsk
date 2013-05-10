@@ -78,6 +78,7 @@ public:
 	static constexpr short C_preamble_chr =  ctrl_chars::TXTOG_CODE;
 	static constexpr short C_postamble_chr = ctrl_chars::TXTOG_CODE;
 	static constexpr auto  C_amble_size = 32;
+	static constexpr unsigned RATE_SCALE = 100;
 
 private:
 	//Get tx char from queue

@@ -242,7 +242,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 			break;
 	}
 	//enerate cosine ramp envelope lookup tables
-	const size_t ramp_size =  (int)(m_sample_freq*100/m_symbol_rate); //  number of envelope ramp steps per symbol
+	const size_t ramp_size =  (int)(m_sample_freq*RATE_SCALE/m_symbol_rate); //  number of envelope ramp steps per symbol
 	for( size_t i=0; i<MAXRAMP_SIZE; i++)
 	{
 		PSKShapeTbl_Z[i] = 0.0;
@@ -265,7 +265,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 		}
 
 	}
-	m_psk_period_update = (m_sample_freq*100)/ m_symbol_rate;
+	m_psk_period_update = (m_sample_freq*RATE_SCALE)/ m_symbol_rate;
 	//TODO: Fix this
 	m_encoder.set_mode( (_internal::symbol_encoder::mode)mmode );
 }
@@ -320,7 +320,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 	//Amplitude factor
 	constexpr double m_RMSConstant = 22000;
 	int v = 0;
-	const auto ramp_size =  (m_sample_freq*100/m_symbol_rate);
+	const auto ramp_size =  (m_sample_freq*RATE_SCALE/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
 		m_t += m_psk_phase_inc;			// increment radian phase count
