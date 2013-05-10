@@ -8,6 +8,7 @@
 #include "psk/modulator.hpp"
 #include <cmath>
 #include <iostream>
+#include <assert.h>
 using namespace std;
 /* ------------------------------------------------------------------------- */
 namespace ham {
@@ -193,8 +194,12 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
 	//TODO convert to array
 	for(int i=0; i<16; i++)
 		m_iq_phase_array[i] = 1;
-	m_p_psk_tx_i = PSKShapeTbl_Z;
-	m_p_psk_tx_q = PSKShapeTbl_Z;
+	//m_p_psk_tx_i = PSKShapeTbl_Z;
+	//m_p_psk_tx_q = PSKShapeTbl_Z;
+	m_p_psk_tx_i = psk_shapes::Z;
+	m_p_psk_tx_q = psk_shapes::Z;
+	tmp_q = PSKShapeTbl_Z;
+	tmp_i = PSKShapeTbl_Z;
 	m_present_phase = PHZ_OFF;
 	set_mode( mode::bpsk, baudrate::b31 );
 	set_freqency( tx_freq );
@@ -316,11 +321,16 @@ void modulator::operator()( int16_t* sample, size_t len )
 	//Amplitude factor
 	constexpr double m_RMSConstant = 22000;
 	int v = 0;
+	const auto ramp_size =  (m_sample_freq/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
 		m_t += m_psk_phase_inc;			// increment radian phase count
 		// create sample from sin/cos and shape tables
-		sample[i] = m_RMSConstant*( m_p_psk_tx_i[m_ramp]* sin( m_t ) + m_p_psk_tx_q[m_ramp++]* cos( m_t ) );
+		//sample[i] = m_RMSConstant*( m_p_psk_tx_i[m_ramp]* sin( m_t ) + m_p_psk_tx_q[m_ramp++]* cos( m_t ) );
+		sample[i] = m_RMSConstant*( m_p_psk_tx_i(m_ramp, ramp_size ) * sin( m_t ) + m_p_psk_tx_q(m_ramp, ramp_size )* cos( m_t ) );
+		assert(  m_p_psk_tx_i(m_ramp, ramp_size ) == tmp_i[m_ramp] );
+		assert(  m_p_psk_tx_q(m_ramp, ramp_size ) == tmp_q[m_ramp] );
+		m_ramp++;
 		m_psk_time += m_psk_sec_per_samp;
 		if( m_psk_time >= m_psk_period_update )//if time to update symbol
 		{
@@ -348,9 +358,12 @@ void modulator::operator()( int16_t* sample, size_t len )
 				cout << char(ch) << " " << ch << endl;
 			}
 			//get new I/Q ramp tables and next phase
-			m_p_psk_tx_i = PSKPhaseLookupTable[symbol][m_present_phase].iptr;
-			m_p_psk_tx_q = PSKPhaseLookupTable[symbol][m_present_phase].qptr;
-			m_present_phase = PSKPhaseLookupTable[symbol][m_present_phase].next;
+			m_p_psk_tx_i = psk_phase_lookup_table[symbol][m_present_phase].iptr;
+			m_p_psk_tx_q = psk_phase_lookup_table[symbol][m_present_phase].qptr;
+			tmp_i =  PSKPhaseLookupTable[symbol][m_present_phase].iptr;
+			tmp_q =  PSKPhaseLookupTable[symbol][m_present_phase].qptr;
+			m_present_phase = psk_phase_lookup_table[symbol][m_present_phase].next;
+			//get new I/Q ramp tables and next phase
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][0];
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][1];
 			v = v & 0x000F;	//keep bounded to 16

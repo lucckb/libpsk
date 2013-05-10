@@ -55,7 +55,7 @@ namespace
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
+            psk_dec.set_mode( ham::psk::decoder::mode::qpskl, ham::psk::decoder::baudrate::b31 );
             psk_dec.set_frequency( 2125 );
             //psk_dec.set_squelch_tresh( 50, ham::psk::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 ); //TMP
@@ -483,7 +483,7 @@ int encoder_main( const char *filename )
 	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024 );
 	//mod.set_auto_shutoff( false );
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
-	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
+	mod.set_mode( ham::psk::modulator::mode::qpskl, ham::psk::modulator::baudrate::b31);
 	for(size_t i=0;i<sizeof txt -1; i++)
 		mod.put_tx( txt[i] );
 	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);

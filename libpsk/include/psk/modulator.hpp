@@ -89,8 +89,10 @@ private:
 	mode m_mode { mode::bpsk };
 	double m_t {};
 	double m_psk_phase_inc;
-	const double* m_p_psk_tx_i {};
-	const double* m_p_psk_tx_q {};
+	double (* m_p_psk_tx_i)( double, double) {};
+	double (*m_p_psk_tx_q )( double, double ) {};
+	double *tmp_i;
+	double *tmp_q;
 	int m_ramp {};
 	double m_psk_sec_per_samp {};
 	double m_psk_time {};
