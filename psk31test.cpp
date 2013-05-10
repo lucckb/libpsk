@@ -112,9 +112,6 @@ namespace
 
 }
 
-
-
-
 int decoder_main( const char *filename )
 {
 

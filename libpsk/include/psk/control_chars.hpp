@@ -12,6 +12,7 @@
 namespace ham {
 namespace psk {
 
+// Special control codes
 namespace ctrl_chars {
 enum ctrl_chars	: short
 {
@@ -20,6 +21,10 @@ enum ctrl_chars	: short
 	TXTOG_CODE = -3
 };
 }
+
+// Definition of the character type
+typedef short txchar_type;
+
 
 }}
 

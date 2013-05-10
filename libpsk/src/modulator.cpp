@@ -278,6 +278,7 @@ void modulator::put_tx( short txchar )
 {
 	constexpr char BACK_SPACE_CODE = 0x08;
 	//EnterCriticalSection(&m_CriticalSection);
+//TODO: Add special control chars later
 #if 0
 	if( cntrl )	//is a tx control code
 	{
