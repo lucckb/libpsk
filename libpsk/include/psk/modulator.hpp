@@ -80,9 +80,10 @@ public:
 	static constexpr auto  C_amble_size = 32;
 
 private:
+	//Get tx char from queue
 	int get_tx_char();
+	//Update state return char
 	int update_state_chr();
-
 private:
 	_internal::symbol_encoder m_encoder;
 	const int m_sample_freq;
@@ -98,7 +99,7 @@ private:
 	double m_psk_time {};
 	double m_psk_period_update {};
 	short m_present_phase {};
-	int m_iq_phase_array[20] {};
+	int m_iq_phase_array[16] {};
 	state m_state;
 	bool m_need_shutoff { true };
 	int m_amble_ptr {};
