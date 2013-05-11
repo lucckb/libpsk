@@ -73,6 +73,7 @@ public:
 	{
 		return m_state;
 	}
+private:
 	//Vector lookup table
 	static constexpr int m_vect_lookup[6][2] =
 		{{0, 1000}, {1000, 0}, {0, -1000}, {-1000, 0}, {0, 0}, {0, 1000}};
@@ -84,7 +85,6 @@ public:
 	static constexpr unsigned RATE_SCALE = 100;
 	//PI2I wrap arround
 	static constexpr int PI2I = 1<<15;
-
 private:
 	//Get tx char from queue
 	int get_tx_char();
@@ -95,10 +95,8 @@ private:
 	const int m_sample_freq;
 	mode m_mode { mode::bpsk };
 	int m_psk_phase_inc;
-	double (*m_p_psk_tx_i)( double, double) {};
-	double (*m_p_psk_tx_q )( double, double ) {};
-	double *tmp_i;	//TODO: Temporary remove later
-	double *tmp_q;	//TODO: Temporary remove later
+	int (*m_p_psk_tx_i)(int, int) {};
+	int (*m_p_psk_tx_q)(int, int) {};
 	int m_ramp {};
 	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	size_t m_psk_sample_cnt {};
