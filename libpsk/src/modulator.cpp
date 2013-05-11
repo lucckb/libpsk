@@ -201,27 +201,17 @@ void modulator::put_tx( short txchar )
 {
 	constexpr char BACK_SPACE_CODE = 0x08;
 	//EnterCriticalSection(&m_CriticalSection);
-//TODO: Add special control chars later
-#if 0
-	if( cntrl )	//is a tx control code
+	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP )
 	{
-		switch( txchar )
-		{
-			case TX_CNTRL_AUTOSTOP:
-				m_temp_need_shutoff = TRUE;
-				if( m_TXState==TX_TUNE_STATE )
-					m_need_shutoff = TRUE;
-				break;
-			case TX_CNTRL_ADDCWID:
-				m_TempNeedCWid = TRUE;
-				break;
-			case TX_CNTRL_NOSQTAIL:
-				m_temp_no_squelch_tail = TRUE;
-				break;
-		}
+		m_temp_need_shutoff = true;
+		if( m_state==state::tune )
+			m_need_shutoff = true;
 	}
-	else		//is a character to xmit
-#endif
+	else if( txchar == ctrl_chars::TX_CNTRL_NOSQTAIL )
+	{
+		m_temp_no_squelch_tail = true;
+	}
+	else
 	{
 		if( (txchar != BACK_SPACE_CODE) || m_chqueue.empty() )
 		{

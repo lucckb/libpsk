@@ -18,7 +18,9 @@ enum ctrl_chars	: short
 {
 	TXOFF_CODE = -1,
 	TXON_CODE  = -2,
-	TXTOG_CODE = -3
+	TXTOG_CODE = -3,
+	TX_CNTRL_AUTOSTOP = -4,
+	TX_CNTRL_NOSQTAIL = -5
 };
 }
 
