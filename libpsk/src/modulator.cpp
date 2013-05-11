@@ -240,7 +240,7 @@ void modulator::operator()( int16_t* sample, size_t len )
 	{
 		// create sample from sin/cos and shape tables
 		sample[i] =  m_nco_mix.mix_sin( m_p_psk_tx_i(m_ramp, ramp_size ), 0 )  +
-				     m_nco_mix.mix_cos(m_p_psk_tx_q(m_ramp, ramp_size ), m_psk_phase_inc) ;
+				     m_nco_mix.mix_cos( m_p_psk_tx_q(m_ramp, ramp_size ), m_psk_phase_inc) ;
 		m_ramp++;
 		if( ++m_psk_sample_cnt >= m_psk_period_update )//if time to update symbol
 		{
