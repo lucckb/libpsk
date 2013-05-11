@@ -223,10 +223,6 @@ void modulator::put_tx( short txchar )
 	//LeaveCriticalSection(&m_CriticalSection);
 }
 /* ------------------------------------------------------------------------- */
-//TODO: FIXME temporary debug only
-#define WRAP(X) #X
-#define HANDLE_PRINT( X )  case symbol_encoder::sym::X: cout << WRAP(X) << " ";  break
-
 //Operator on new samples
 void modulator::operator()( int16_t* sample, size_t len )
 {
