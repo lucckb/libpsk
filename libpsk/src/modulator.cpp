@@ -7,6 +7,7 @@
 /* ------------------------------------------------------------------------- */
 #include "psk/modulator.hpp"
 #include <cmath>
+//TODO: FIXME temporary debug only
 #include <iostream>
 #include <assert.h>
 using namespace std;
@@ -54,29 +55,29 @@ namespace
 			return -C_rms;
 		}
 		//Plus minus transient
-		int PM( int angle, int ramp )
+		int PM( int pos, int max )
 		{
-			return mth::cos( (mth::PI2I*angle )/(2*ramp) );
+			return mth::cos( (mth::PI2I*pos)/(2*max) );
 		}
 		//Minus plus transient
-		int MP( int angle, int ramp )
+		int MP( int pos, int max )
 		{
-			return -mth::cos( (mth::PI2I*angle )/(2*ramp) );
+			return -mth::cos( (mth::PI2I*pos)/(2*max) );
 		}
 		//Plus zero transient
-		int PZ( int angle, int ramp )
+		int PZ( int pos, int max )
 		{
-			return (angle<ramp/2)?(mth::cos( (mth::PI2I*angle )/(2*ramp) )):(0);
+			return (pos<max/2)?(mth::cos( (mth::PI2I*pos)/(2*max) )):(0);
 		}
 		//Minus zero transient
-		int MZ(int angle, int ramp)
+		int MZ(int pos, int max)
 		{
-			return (angle<ramp/2)?(-mth::cos((mth::PI2I*angle )/(2*ramp))):(0);
+			return (pos<max/2)?(-mth::cos((mth::PI2I*pos)/(2*max))):(0);
 		}
 		//Zero plus transient
-		int ZP(int angle, int ramp)
+		int ZP(int pos, int max)
 		{
-			return (angle<ramp/2)?(0):(-mth::cos((mth::PI2I*angle )/(2*ramp)));
+			return (pos<max/2)?(0):(-mth::cos((mth::PI2I*pos)/(2*max)));
 		}
 	}
 	//Signal phaze states
@@ -225,7 +226,7 @@ void modulator::put_tx( short txchar )
 	//LeaveCriticalSection(&m_CriticalSection);
 }
 /* ------------------------------------------------------------------------- */
-//FIXME temporary
+//TODO: FIXME temporary debug only
 #define WRAP(X) #X
 #define HANDLE_PRINT( X )  case symbol_encoder::sym::X: cout << WRAP(X) << " ";  break
 
