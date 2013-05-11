@@ -7,10 +7,7 @@
 /* ------------------------------------------------------------------------- */
 #include "psk/modulator.hpp"
 #include <cmath>
-//TODO: FIXME temporary debug only
-#include <iostream>
-#include <assert.h>
-using namespace std;
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -253,20 +250,6 @@ void modulator::operator()( int16_t* sample, size_t len )
 				ch = update_state_chr();
 			}
 			const int symbol = m_encoder( ch );
-			//Temporary
-			{
-				using namespace _internal;
-				switch( symbol )
-				{
-					HANDLE_PRINT( SYM_NOCHANGE );
-					HANDLE_PRINT( SYM_P90 );
-					HANDLE_PRINT( SYM_P180 );
-					HANDLE_PRINT(SYM_M90);
-					HANDLE_PRINT(SYM_OFF);
-					HANDLE_PRINT(SYM_ON);
-				}
-				cout << char(ch) << " " << ch << endl;
-			}
 			//get new I/Q ramp tables and next phase
 			m_p_psk_tx_i = psk_phase_lookup_table[symbol][m_present_phase].iptr;
 			m_p_psk_tx_q = psk_phase_lookup_table[symbol][m_present_phase].qptr;
