@@ -243,7 +243,6 @@ void modulator::operator()( int16_t* sample, size_t len )
 		{
 			m_psk_sample_cnt = 0;
 			m_ramp = 0;						// time to update symbol
-			//m_t = fmod(m_t,m_2PI);			//keep radian counter bounded
 			short ch = 0;
 			if( m_encoder.eos() )
 			{
