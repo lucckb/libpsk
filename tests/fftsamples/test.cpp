@@ -27,6 +27,7 @@ void plot( const T *x, const K *y, int len, const char *title)
     {
         os << (x?x[i]:i) << " " << (y[i]) << std::endl;
     }
+    os.close();
     strcpy(cmd,"echo 'plot \"");
     strcat(cmd,name);
     strcat(cmd,"\" title \"");
@@ -41,12 +42,10 @@ void plot( const T *x, const K *y, int len, const char *title)
     {
        perror("system");
        exit(-1);
-
     }
 }
 
 /* ---------------------------------------------------------------- */
-
 
 float cplx_abs( std::complex<short> v )
 {
@@ -54,7 +53,12 @@ float cplx_abs( std::complex<short> v )
 }
 
 /* ---------------------------------------------------------------- */
-
+/* Worst case
+ * y[s] = (sin((2*M_PI/N_SAMPL)*s*FREQUENCY*1.5) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2.5)) * 8192;
+ * const float MAX = *std::max_element(abst, abst+N_SAMPL );
+	for(int s=0; s< N_SAMPL; s++ )
+	  abst[s] = 20.0*log10((abst[s]+1)/MAX);
+ */
 constexpr auto N_SAMPL = 1024*1;
 constexpr auto FREQUENCY = N_SAMPL / 10;
 

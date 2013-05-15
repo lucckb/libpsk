@@ -5,7 +5,7 @@ TARGET	   = ffttest
 
 #Optimalization [0,1,2,3,s]
 # 0 - none optimalization, s - size optimalization 3 - most optimized
-OPT ?= s 
+OPT ?= 2 
 
 
 #Common flags 
