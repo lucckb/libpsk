@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "dsp/fft.h"
+#include "psk/spectrum_calculator.hpp"
 
 /* ---------------------------------------------------------------- */
 template <typename T, typename K >
@@ -59,7 +60,7 @@ float cplx_abs( std::complex<short> v )
 	for(int s=0; s< N_SAMPL; s++ )
 	  abst[s] = 20.0*log10((abst[s]+1)/MAX);
  */
-constexpr auto N_SAMPL = 1024*1;
+constexpr auto N_SAMPL = 512;
 constexpr auto FREQUENCY = N_SAMPL / 10;
 
 int main()
@@ -80,7 +81,14 @@ int main()
         t[s] = s/(float)N_SAMPL;
     }
 	plot( t, y, N_SAMPL , "SI");
-    if( 0 )
+
+#if 1
+	ham::psk::spectrum_calculator spc;
+	spc.copy_samples( y );
+	plot( t, &spc[0], N_SAMPL, "FINAL");
+
+#else
+	if( 0 )
     {
 		std::complex<short> x[N_SAMPL];
 		bzero(x, sizeof x);
@@ -97,6 +105,7 @@ int main()
     		abst[s] = cplx_abs( x[s] );
     	plot( t, abst, N_SAMPL , "FFT");
     }
+#endif
 }
 
 

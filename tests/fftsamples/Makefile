@@ -34,7 +34,7 @@ LISTING = n
 DEBUG ?=  y
 
 #Source C++ files
-CPPSRC += $(wildcard *.cpp)
+CPPSRC += $(wildcard *.cpp) ../../libpsk/src/spectrum_calculator.cpp
 
 include ../../unix.mk
 
