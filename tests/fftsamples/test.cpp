@@ -73,10 +73,10 @@ int main()
 	for(int s=0; s< N_SAMPL; s++ )
     {
 		//y[s] = (sin((2*M_PI/N_SAMPL)*s*FREQUENCY*1.5) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2.5)) * 8192;
-		if( s > N_SAMPL/10)
+		//if( s > N_SAMPL/20)
 		y[s] =  (sin((2*M_PI/N_SAMPL)*s*FREQUENCY) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2)) * 15000;
-	    else
-        y[s] = 0;
+	    //else
+        //y[s] = 0;
 	    yc[s].real( y[s] );
         yc[s].imag ( 0 );
         t[s] = s/(float)N_SAMPL;
@@ -86,7 +86,7 @@ int main()
 #if 1
 	ham::psk::spectrum_calculator spc;
 	spc.copy_samples( y );
-	plot( t, &spc[0], N_SAMPL, "FINAL");
+	plot( t, &spc[0], N_SAMPL/2, "FINAL");
 
 #else
 	if( 0 )
