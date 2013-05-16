@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <complex>
 #include <cstring>
+#include <limits>
 /*----------------------------------------------------------*/
 namespace ham {
 namespace psk {
@@ -18,9 +19,15 @@ namespace psk {
 /*----------------------------------------------------------*/
 //Class spectrum calculator calculate the current spectrum
 class spectrum_calculator {
+public:
+	//Spectrum data type
+	typedef short pow_t;
+private:
 	//Number of samples
 	static constexpr auto MLOG2 = 9;
 	static constexpr auto WIDTH = 1<<MLOG2;
+	static constexpr int LOG_SCALE =  std::numeric_limits<pow_t>::max() + 1;
+	static constexpr int LOGVAL_SCALE = std::log2(std::log2( LOG_SCALE + 1 ) + 1);
 	//Make object noncopyable
 	spectrum_calculator(const spectrum_calculator&) = delete;
 	spectrum_calculator& operator=(const spectrum_calculator&) = delete;
@@ -28,8 +35,6 @@ public:
 	//Constructor
 	spectrum_calculator()
 	{}
-	//Spectrum data type
-	typedef short pow_t;
 public:
 	//Copy sample buffer
 	void copy_samples( const pow_t* samples )

@@ -72,7 +72,8 @@ int main()
 	float abst[N_SAMPL*2];
 	for(int s=0; s< N_SAMPL; s++ )
     {
-	    if( s > N_SAMPL/10)
+		//y[s] = (sin((2*M_PI/N_SAMPL)*s*FREQUENCY*1.5) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2.5)) * 8192;
+		if( s > N_SAMPL/10)
 		y[s] =  (sin((2*M_PI/N_SAMPL)*s*FREQUENCY) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2)) * 15000;
 	    else
         y[s] = 0;
