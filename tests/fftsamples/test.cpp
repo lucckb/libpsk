@@ -85,6 +85,7 @@ int main()
 
 #if 1
 	ham::psk::spectrum_calculator spc;
+	spc.set_scale( 	ham::psk::spectrum_calculator::scale::lin );
 	spc.copy_samples( y );
 	plot( t, &spc[0], N_SAMPL/2, "FINAL");
 
