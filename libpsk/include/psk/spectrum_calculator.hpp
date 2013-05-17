@@ -60,11 +60,16 @@ public:
 		return m_real[idx];
 	}
 	//Set scale
-	void set_scale( scale sc )
+	void set_scale( scale sc, pow_t factor = std::numeric_limits<pow_t>::max() )
 	{
 		if( sc != m_scale)
 		{
 			m_scale = sc;
+			m_energy_calculated = false;
+		}
+		if( m_factor != factor )
+		{
+			m_factor = factor;
 			m_energy_calculated = false;
 		}
 	}
@@ -98,6 +103,7 @@ private:
 	pow_t* const m_real { reinterpret_cast<pow_t* const>(m_cplx) };
 	bool m_energy_calculated { false };		//Energy is calculated
 	scale m_scale { scale::log };			//Current scale
+	pow_t m_factor { std::numeric_limits<pow_t>::max() };
 };
 
 /*----------------------------------------------------------*/
