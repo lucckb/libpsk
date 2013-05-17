@@ -68,6 +68,19 @@ public:
 			m_energy_calculated = false;
 		}
 	}
+	//Get min and max value
+	int min_value() const
+	{
+		constexpr int minv = 20 * std::log10( 1.0/std::numeric_limits<pow_t>::max() );
+		if( m_scale == scale::log ) return minv;
+		else return 0;
+	}
+	//Get MAX scale value
+	int max_value() const
+	{
+		if( m_scale == scale::log ) return 0;
+		else return 100;
+	}
 private:
 	//Calculate samplees
 	void calculate_samples();
