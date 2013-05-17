@@ -11,6 +11,7 @@
 /* ------------------------------------------------------------------------- */
 #include <cstddef>
 #include <cstdint>
+#include <array>
 #include "psk/dyn_queue.hpp"
 #include "psk/symbol_encoder.hpp"
 #include "dsp/nco_mixer.hpp"
@@ -101,7 +102,8 @@ private:
 	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	size_t m_psk_sample_cnt {};
 	short m_present_phase {};
-	int m_iq_phase_array[16] {};
+	//Change this to array
+	std::array<int, 16> m_iq_phase_array{{}};
 	state m_state;
 	bool m_need_shutoff { true };
 	int m_amble_ptr {};
