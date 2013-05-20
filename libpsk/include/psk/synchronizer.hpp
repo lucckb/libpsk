@@ -49,8 +49,7 @@ private:
 	static constexpr auto PHZ_SCALE = 1<<15;
 public:
 	//Constructor
-	symbol_synchronizer( std::function< void(int param1)> callback )
-		:  m_callback(callback)
+	symbol_synchronizer()
 	{}
 	//Reset the decoder
 	void reset()
@@ -65,7 +64,7 @@ public:
 		return m_sync_array;
 	}
 	///Synchronize symbol data
-	bool operator()( std::complex<int> sample, bool sq_open )
+	bool operator()( std::complex<int> sample, bool sq_open, bool &clk_err_avail )
 	{
 		constexpr auto SMPL_SCALE = 1<<15;
 		constexpr auto ENERGY_SCALE = SMPL_SCALE * 2;
@@ -133,8 +132,9 @@ public:
 					m_clk_error = m_clk_err_counter*200;	//each count is 200ppm
 					m_clk_err_counter = 0;
 					m_clk_err_timer = 0;
-					//if( m_callback ) m_callback( cb_clkerror, m_clk_error, 0 );
-					if( m_callback ) m_callback( m_clk_error );
+					//m_clk_error callback update
+					//if( m_callback ) m_callback( m_clk_error );
+					clk_err_avail = true;
 				}
 			}
 			else
@@ -148,6 +148,10 @@ public:
 		m_bit_pos = bit_pos;
 		return trigger;
 	}
+	int get_clk_error() const
+	{
+		return m_clk_error;
+	}
 private:
 	int m_bit_pos {};
 	std::array<unsigned int, 16> m_sync_ave {{}};
@@ -159,7 +163,6 @@ private:
 	int m_clk_err_counter {};
 	int m_clk_err_timer {};
 	int m_clk_error {};
-	std::function< void(int param1)> m_callback;
 };
 
 

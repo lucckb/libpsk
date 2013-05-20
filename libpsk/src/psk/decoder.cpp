@@ -371,7 +371,6 @@ namespace
 decoder::decoder( samplerate_type sample_rate, event_callback_type callback ) :
 	  m_callback(callback ),
 	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
-      m_sync(  std::bind( callback, decoder::cb_clkerror, std::placeholders::_1, 0) ),
 	  m_sample_freq( sample_rate ),
 	  m_afc(m_nco_phzinc, 50*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
@@ -443,7 +442,7 @@ void decoder::decode_symb( std::complex<int> newsamp )
 
 /* ------------------------------------------------------------------------- */
 //Process input sample buffer
-void decoder::operator()( const sample_type* samples, std::size_t sample_size )
+unsigned decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
 	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
 	m_afc.handle_sample_timer( m_nco_phzinc );
@@ -482,9 +481,14 @@ void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 
             	//Perform AFC operation
             	m_nco_phzinc = m_afc( freq_signal, m_nco_phzinc);
-				// Bit Timing synchronization
-				if( m_sync(bit_signal, m_squelch.is_open()) )
-					decode_symb( bit_signal );
+            	{
+					bool clk_err_valid = false;
+            		// Bit Timing synchronization
+					if( m_sync(bit_signal, m_squelch.is_open(), clk_err_valid) )
+						decode_symb( bit_signal );
+					if( clk_err_valid && m_callback )
+						m_callback( cb_clkerror, m_sync.get_clk_error() , 0 );
+            	}
 				// Calculate IMD if only idles have been received and the energies collected
 				if( m_squelch.is_imd_valid() )
 				{

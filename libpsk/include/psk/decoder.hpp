@@ -72,7 +72,7 @@ public:
 	//Construct the decoder object
 	explicit decoder( samplerate_type sample_rate, event_callback_type  callback );
 	//Process input sample buffer
-	void operator()( const sample_type* samples, std::size_t sample_size );
+	unsigned operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
 	const signal_vector_type& get_vector_data( ) const
 	{

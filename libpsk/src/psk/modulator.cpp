@@ -228,7 +228,7 @@ unsigned modulator::operator()( sample_type* sample, size_t len )
 {
 	//Amplitude factor
 	int v = 0;
-	int r = 0;
+	unsigned r = 0;
 	const auto ramp_size =  (m_sample_freq*RATE_SCALE/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{

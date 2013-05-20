@@ -45,7 +45,7 @@ public:
 		EV_CLK_ERR = 2,
 		EV_IMD_RDY = 4
 	} ;
-	virtual void operator()( const sample_type* samples, std::size_t sample_size ) = 0;
+	virtual unsigned operator()( const sample_type* samples, std::size_t sample_size ) = 0;
 	virtual void reset() = 0;
 	virtual short read_char() const = 0;
 	virtual size_t get_count() const = 0;
@@ -61,12 +61,8 @@ class tx_codec
 	tx_codec(const tx_codec&) = delete;
 	tx_codec& operator=(const tx_codec&) = delete;
 public:
-	//Constructor and destructor
 	tx_codec() {}
-	virtual ~tx_codec()
-	{}
-	//Public interface
-	virtual void put_tx( short chr ) = 0;
+	virtual void put_tx( short ) = 0;
 	virtual void clear_tx() = 0;
 	virtual void set_freqency( int freq ) = 0;
 	virtual size_t get_count() const = 0;
