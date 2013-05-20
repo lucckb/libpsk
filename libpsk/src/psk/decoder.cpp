@@ -497,7 +497,7 @@ unsigned decoder::operator()( const sample_type* samples, std::size_t sample_siz
 						int m_imd_value;
 						if( m_calc_imd.calc_value( m_imd_value ) )
 						{
-							if( m_callback ) m_callback( cb_imdrdy,  m_imd_value, 0 );
+							if( m_callback ) m_callback( cb_imdrdy, m_imd_value, 0 );
 						}
 						else
 						{
