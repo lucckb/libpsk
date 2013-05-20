@@ -16,13 +16,14 @@
 #include "psk/symbol_encoder.hpp"
 #include "dsp/nco_mixer.hpp"
 #include "codec/codec_types.hpp"
+#include "codec/trx_device_base.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
 
 /* ------------------------------------------------------------------------- */
 /* PSK modulator class */
-class modulator {
+class modulator : public tx_codec {
 	//Make object noncopyable
 	modulator(const modulator&) = delete;
 	modulator& operator=(const modulator&) = delete;
@@ -54,17 +55,20 @@ public:
 	//Constructor
 	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
 	//Operator on new samples
-	void operator()( sample_type* sample, size_t len );
+	virtual unsigned operator()( sample_type* sample, size_t len );
 	//Set char into the modulator
-	void put_tx( short c );
+	virtual void put_tx( short c );
 	//Clear queue
-	void clear_tx();
+	virtual void clear_tx();
 	//Set frequency
-	void set_freqency( int frequency );
+	virtual void set_freqency( int frequency );
 	//Set mode
 	void set_mode( mode mmode, baudrate baud );
 	//Get number of chars remaining
-	size_t size_tx() const;
+	virtual size_t get_count() const
+	{
+		return m_chqueue.size();
+	}
 	//Set auto shut off
 	void set_auto_shutoff( bool en = true )
 	{
@@ -75,6 +79,9 @@ public:
 	{
 		return m_state;
 	}
+	//TODO: Add reset support
+	virtual void reset()
+	{}
 private:
 	//Vector lookup table
 	static constexpr int m_vect_lookup[6][2] =

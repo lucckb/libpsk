@@ -224,10 +224,11 @@ void modulator::put_tx( short txchar )
 }
 /* ------------------------------------------------------------------------- */
 //Operator on new samples
-void modulator::operator()( sample_type* sample, size_t len )
+unsigned modulator::operator()( sample_type* sample, size_t len )
 {
 	//Amplitude factor
 	int v = 0;
+	int r = 0;
 	const auto ramp_size =  (m_sample_freq*RATE_SCALE/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
@@ -253,8 +254,12 @@ void modulator::operator()( sample_type* sample, size_t len )
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][0];
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][1];
 			v = v & 0x000F;	//keep bounded to 16
+			if( m_state == state::sending && ch > 0 )
+				r |= tx_codec::EV_SEND_CHAR_COMPLETE;
 		}
 	}
+	if( m_state==state::off ) r |= tx_codec::EV_TX_COMPLETE;
+	return r;
 }
 
 
@@ -280,7 +285,6 @@ int modulator::get_tx_char()
 int modulator::update_state_chr()
 {
 	int ch = 0;
-	// static test = '0';  //AA6YQ - not referenced
 	switch( m_state )
 	{
 		case state::off:		//is receiving
@@ -330,11 +334,6 @@ int modulator::update_state_chr()
 			{
 				m_state = state::postamble;
 			}
-			else
-			{
-				//if( ch > 0 )
-				//	::PostMessage(m_hWnd, MSG_PSKCHARRDY,ch,-1);
-			}
 			m_amble_ptr = 0;
 			break;
 	}
@@ -352,12 +351,7 @@ void modulator::clear_tx()
 	m_temp_need_shutoff = false;
 	m_temp_no_squelch_tail = false;
 }
-/* ------------------------------------------------------------------------- */
-//Get number of chars remaining
-size_t modulator::size_tx() const
-{
-	return m_chqueue.size();
-}
+
 /* ------------------------------------------------------------------------- */
 } /* namespace psk */
 } /* namespace ham */

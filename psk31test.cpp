@@ -489,7 +489,8 @@ int encoder_main( const char *filename )
 	//mod.put_tx(ham::psk::ctrl_chars::TXOFF_CODE);
 	for (;;) {
 		/* Compute current audio and video time. */
-		mod( ww.get_sample_buf(), ww.get_audio_frame_size() );
+		unsigned c = mod( ww.get_sample_buf(), ww.get_audio_frame_size() );
+		std::cout << c << std::endl;
 		ww.write_audio_data();
 		if( mod.get_state() == ham::psk::modulator::state::off )
 			break;

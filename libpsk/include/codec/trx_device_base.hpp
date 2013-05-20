@@ -61,17 +61,22 @@ class tx_codec
 	tx_codec(const tx_codec&) = delete;
 	tx_codec& operator=(const tx_codec&) = delete;
 public:
-	virtual void put_tx( short ) = 0;
+	//Constructor and destructor
+	tx_codec() {}
+	virtual ~tx_codec()
+	{}
+	//Public interface
+	virtual void put_tx( short chr ) = 0;
 	virtual void clear_tx() = 0;
-	virtual void set_freqency( int value ) = 0;
+	virtual void set_freqency( int freq ) = 0;
 	virtual size_t get_count() const = 0;
 	virtual void reset() = 0;
 	enum event
 	{
-		EV_STATUS_UPDATE  = 1,
-		EV_TX_COMPLETE    = 2
+		EV_SEND_CHAR_COMPLETE  = 1,
+		EV_TX_COMPLETE    	   = 2
 	};
-	virtual unsigned operator()( int16_t* sample, size_t len );
+	virtual unsigned operator()( sample_type* sample, size_t len ) = 0;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -103,7 +108,7 @@ private:
 	void adc_handler( const sample_type *buf, size_t len );
 	void dac_handler( sample_type *buf, size_t len );
 private:
-	tx_codec* const m_tx_codec;
+	tx_codec* m_tx_codec;
 	std::array<rx_codec*, MAX_CODECS> m_rx_codecs;
 	spectrum_calculator m_spectrum;
 	short m_nrxcodecs;
