@@ -66,6 +66,7 @@ constexpr auto FREQUENCY = N_SAMPL / 10;
 int main()
 {
 	using namespace dsp::refft;
+#if 1
 	short y[N_SAMPL*2];
 	std::complex<short> yc[N_SAMPL*2];
 	float t[N_SAMPL];
@@ -83,15 +84,33 @@ int main()
     }
 	plot( t, y, N_SAMPL , "SI");
 
-#if 1
 	ham::psk::spectrum_calculator spc;
+	spc.set_scale( 	ham::psk::spectrum_calculator::scale::log );
 	spc.copy_samples( y );
 	plot( t, &spc[0], N_SAMPL/2, "FINAL");
-
+	for(int i=0; i<N_SAMPL/2; i++)
+		std::cout << spc[i] << std::endl;
 #else
+	typedef short plot_t ;
+	plot_t y[N_SAMPL*2];
+	std::complex<plot_t> yc[N_SAMPL*2];
+	float t[N_SAMPL];
+	float abst[N_SAMPL*2];
+	for(int s=0; s< N_SAMPL; s++ )
+	{
+		//y[s] = (sin((2*M_PI/N_SAMPL)*s*FREQUENCY*1.5) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2.5)) * 8192;
+		//if( s > N_SAMPL/20)
+		y[s] =  (sin((2*M_PI/N_SAMPL)*s*FREQUENCY) + 0.5*sin( (2*M_PI/N_SAMPL)*s*FREQUENCY*2)) * 15000;
+	    //else
+	    //y[s] = 0;
+	    yc[s].real( y[s] );
+	    yc[s].imag ( 0 );
+	    t[s] = s/(float)N_SAMPL;
+	}
+	plot( t, y, N_SAMPL , "SI");
 	if( 0 )
     {
-		std::complex<short> x[N_SAMPL];
+		std::complex<plot_t> x[N_SAMPL];
 		bzero(x, sizeof x);
 		fft_complex(x, yc, log2(N_SAMPL) );
 		for(int s=0; s< N_SAMPL; s++ )
@@ -100,12 +119,14 @@ int main()
     }
     else
     {
-    	std::complex<short> x[N_SAMPL];
+    	std::complex<plot_t> x[N_SAMPL];
     	fft_real( x, y, log2(N_SAMPL));
     	for(int s=0; s< N_SAMPL; s++ )
     		abst[s] = cplx_abs( x[s] );
     	plot( t, abst, N_SAMPL , "FFT");
     }
+	for(int i=0; i<N_SAMPL/2; i++)
+		std::cout << abst[i] << std::endl;
 #endif
 }
 
