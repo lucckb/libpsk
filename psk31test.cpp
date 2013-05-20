@@ -265,7 +265,6 @@ int decoder_main( const char *filename )
 
 /* *************************** ENCODER ********************************** */
 
-
 class audio_writer
 {
 private:

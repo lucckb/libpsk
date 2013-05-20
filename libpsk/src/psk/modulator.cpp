@@ -224,7 +224,7 @@ void modulator::put_tx( short txchar )
 }
 /* ------------------------------------------------------------------------- */
 //Operator on new samples
-void modulator::operator()( int16_t* sample, size_t len )
+void modulator::operator()( sample_type* sample, size_t len )
 {
 	//Amplitude factor
 	int v = 0;

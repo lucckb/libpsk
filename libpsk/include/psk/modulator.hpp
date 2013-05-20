@@ -15,6 +15,7 @@
 #include "psk/dyn_queue.hpp"
 #include "psk/symbol_encoder.hpp"
 #include "dsp/nco_mixer.hpp"
+#include "codec/codec_types.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -53,7 +54,7 @@ public:
 	//Constructor
 	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
 	//Operator on new samples
-	void operator()( int16_t* sample, size_t len );
+	void operator()( sample_type* sample, size_t len );
 	//Set char into the modulator
 	void put_tx( short c );
 	//Clear queue

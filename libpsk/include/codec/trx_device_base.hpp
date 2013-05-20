@@ -61,7 +61,7 @@ class tx_codec
 	tx_codec(const tx_codec&) = delete;
 	tx_codec& operator=(const tx_codec&) = delete;
 public:
-	virtual void put_tx( short  ) = 0;
+	virtual void put_tx( short ) = 0;
 	virtual void clear_tx() = 0;
 	virtual void set_freqency( int value ) = 0;
 	virtual size_t get_count() const = 0;
