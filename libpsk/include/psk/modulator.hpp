@@ -37,18 +37,18 @@ public:
 
 	enum class state
 	{
-		off,
-		sending,
-		paused,
-		preamble,
-		postamble,
-		tune
+		off,				//Decoder is off
+		sending,			//Decoder sending data
+		paused,				//Decoder is paused
+		preamble,			//Decoder sending preamble
+		postamble,			//Decoder sending postamble
+		tune				//Decoder in tune state
 	};
 	enum class baudrate
 	{
-		b31,
-		b63,
-		b125
+		b31,				//Baudrate 31
+		b63,				//Baudrate 63
+		b125				//Baudrate 125
 	};
 	//Constructor
 	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
@@ -103,7 +103,7 @@ private:
 	size_t m_psk_sample_cnt {};
 	short m_present_phase {};
 	//Change this to array
-	std::array<int, 16> m_iq_phase_array{{}};
+	std::array<int, 16> m_iq_phase_array {{}};
 	state m_state;
 	bool m_need_shutoff { true };
 	int m_amble_ptr {};

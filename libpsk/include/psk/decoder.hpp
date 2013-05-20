@@ -24,19 +24,19 @@
 #include "viterbi_decoder.hpp"
 #include "squelch.hpp"
 #include "symbol_decoder.hpp"
+#include "codec/codec_types.hpp"
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
 
 /* ------------------------------------------------------------------------- */
-//Sample type variable
-typedef int16_t sample_type;
+
 //Vector data
 typedef std::array<int, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<unsigned int, 16> sync_array_type;
-//Sample rate type
-typedef short samplerate_type;
+
 /* ------------------------------------------------------------------------- */
 //Event calback type
 typedef std::function< void( int event, int param1, int param2 ) > event_callback_type;

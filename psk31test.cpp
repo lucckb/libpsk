@@ -6,7 +6,7 @@
 #include <psk/decoder.hpp>
 #include <psk/modulator.hpp>
 #include <functional>
-
+#include <codec/trx_device_base.hpp>
 
 
 #ifndef __arm__

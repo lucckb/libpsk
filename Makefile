@@ -34,7 +34,7 @@ LISTING = n
 DEBUG ?=  y
 
 #Source C++ files
-CPPSRC += $(wildcard *.cpp) $(wildcard libpsk/src/*.cpp)
+CPPSRC += $(wildcard *.cpp) $(wildcard libpsk/src/psk/*.cpp) $(wildcard libpsk/src/codec/*.cpp)
 
 include unix.mk
 
