@@ -49,8 +49,7 @@ namespace
 		}
     public:
         sample_tester()  :
-        	 psk_dec( 8000, std::bind( &sample_tester::decoder_callback,
-        			this, std::placeholders::_1, std::placeholders::_2 , std::placeholders::_3) )
+        	 psk_dec( 8000, 1024 )
             , sample_min( std::numeric_limits<double>::max() )
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
@@ -78,7 +77,28 @@ namespace
             	if( sample[i] > sample_max) sample_max = sample[i];
                 if( sample[i] < sample_min ) sample_min = sample[i];
             }
-            psk_dec( sample, buflen );
+            unsigned flags =  psk_dec( sample, buflen );
+            if( flags & ham::psk::rx_codec::EV_RX_CHAR )
+            {
+            	std::cout << "EV_RX_CHAR [";
+            	int ch = psk_dec.read_char();
+            	while(ch != ham::psk::rx_codec::NO_CHAR)
+            	{
+            		std::cout <<char(ch);
+            		ch = psk_dec.read_char();
+            	}
+            	std::cout << "]"<<std::endl;
+            }
+            if( flags & ham::psk::rx_codec::EV_IMD_RDY )
+            {
+            	ham::psk::imd_value imd;
+            	psk_dec.get_imd( imd );
+            	std::cout << "EV_IMD_RDY [L" << imd.imd << " N" << imd.over_noise << "]" << std::endl;
+            }
+            if( flags & ham::psk::rx_codec::EV_CLK_ERR )
+            {
+            	std::cout << "EV_CLK_ERR [" << psk_dec.get_clkerr() << "]"<<std::endl;
+            }
             if(wfile)
                 fwrite( sample, sizeof(double), buflen, wfile );
             return 0;

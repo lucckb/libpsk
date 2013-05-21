@@ -31,6 +31,10 @@ public:
 	{
 		return m_imd;
 	}
+	bool is_over_noise() const
+	{
+		return m_snr > (-m_imd+6);
+	}
 private:
 	std::array<int, NUM_FILTERS> I1 {{}};
 	std::array<int, NUM_FILTERS> I2 {{}};

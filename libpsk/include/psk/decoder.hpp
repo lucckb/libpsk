@@ -25,7 +25,8 @@
 #include "squelch.hpp"
 #include "symbol_decoder.hpp"
 #include "codec/codec_types.hpp"
-
+#include "codec/trx_device_base.hpp"
+#include "psk/dyn_queue.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -37,11 +38,14 @@ typedef std::array<int, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<unsigned int, 16> sync_array_type;
 
+/* Current imd VALUE */
+struct imd_value
+{
+	short imd;
+	bool over_noise;
+};
 /* ------------------------------------------------------------------------- */
-//Event calback type
-typedef std::function< void( int event, int param1, int param2 ) > event_callback_type;
-/* ------------------------------------------------------------------------- */
-class decoder {
+class decoder : public rx_codec {
 	//Make object noncopyable
 	decoder(const decoder&) = delete;
 	decoder& operator=(const decoder&) = delete;
@@ -49,7 +53,6 @@ class decoder {
 	static constexpr auto BITFIR_LENGTH = 65;
 	static constexpr int SCALE = 1<<15;
 	static constexpr int PI2I = 1<<15;
-
 public:
 	enum cbevent
 	{
@@ -70,18 +73,29 @@ public:
 		b125
 	};
 	//Construct the decoder object
-	explicit decoder( samplerate_type sample_rate, event_callback_type  callback );
+	explicit decoder( samplerate_type sample_rate, std::size_t ch_queue_len );
 	//Process input sample buffer
-	unsigned operator()( const sample_type* samples, std::size_t sample_size );
+	virtual unsigned operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
 	const signal_vector_type& get_vector_data( ) const
 	{
 		return m_angle_calc.get_iq_phase_array();
 	}
+	virtual short read_char()
+	{
+		char ch;
+		return m_chqueue.pop( ch )?(NO_CHAR):( ch );
+	}
+	virtual size_t get_count() const
+	{
+		return m_chqueue.size();
+	}
 	//Reset decoder
-	void reset();
+	virtual void reset();
+
 	//Set receive frequency
-	void set_frequency( int freq );
+	virtual void set_frequency( int freq );
+
 	//Set detector mode
 	void set_mode( mode mode, baudrate rate )
 	{
@@ -91,12 +105,12 @@ public:
 	//Set AFC limit
 	void set_afc_limit( int limit );
 	//Get current frequency
-	int get_frequency() const
+	virtual int get_frequency() const
 	{
 		return m_rx_frequency;
 	}
 	//Get signal level
-	int get_signal_level() const
+	virtual sqelch_value_type get_signal_level() const
 	{
 		return m_squelch.get_level();
 	}
@@ -105,19 +119,26 @@ public:
 		return m_sync.get_sync_data();
 	}
 	//Set squelch tresh
-	void set_squelch_tresh( sqelch_value_type tresh, squelch_mode mode )
+	virtual void set_squelch( sqelch_value_type tresh, squelch_mode mode )
 	{
 		m_squelch.set_tresh( tresh, mode );
 	}
+	void get_imd( imd_value &val ) const
+	{
+		val.imd = m_calc_imd.get_value();
+		val.over_noise = m_calc_imd.is_over_noise();
+	}
+	int get_clkerr() const
+	{
+		return m_sync.get_clk_error();
+	}
 private:
-	void decode_symb( std::complex<int> newsamp );
+	int decode_symb( std::complex<int> newsamp );
 	bool is_qpsk() const
 	{
 		return m_rx_mode != mode::bpsk;
 	}
 private:
-	//Event handler
-	event_callback_type m_callback;
 	//Numeric controlled oscillator and mixer
 	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
@@ -140,6 +161,7 @@ private:
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long long> > m_fir2_dec;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_bit_fir;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_freq_fir;
+    fnd::dyn_queue<char> m_chqueue;
 };
 
 /* ------------------------------------------------------------------------- */

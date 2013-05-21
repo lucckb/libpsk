@@ -37,21 +37,24 @@ class rx_codec
 	rx_codec(const rx_codec&) = delete;
 	rx_codec& operator=(const rx_codec&) = delete;
 public:
-	virtual void set_freqency( int value );
 	//Retuer event mask
 	enum event
 	{
 		EV_RX_CHAR = 1,
 		EV_CLK_ERR = 2,
-		EV_IMD_RDY = 4
+		EV_IMD_RDY = 4,
+		EV_QUE_OVERFLOW = 8
 	} ;
+	static constexpr auto NO_CHAR = -1;
+	rx_codec()
+	{}
 	virtual unsigned operator()( const sample_type* samples, std::size_t sample_size ) = 0;
 	virtual void reset() = 0;
-	virtual short read_char() const = 0;
+	virtual short read_char() = 0;
 	virtual size_t get_count() const = 0;
-	virtual unsigned get_event( event ev ) = 0;
-	virtual int get_signal_level() const = 0;
-	virtual sqelch_value_type  get_squelch() const = 0;
+	virtual void set_frequency( int freq ) = 0;
+	virtual int get_frequency( ) const = 0;
+	virtual sqelch_value_type get_signal_level() const = 0;
 	virtual void set_squelch(sqelch_value_type , squelch_mode) = 0;
 };
 /* ------------------------------------------------------------------------- */
