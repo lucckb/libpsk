@@ -202,7 +202,7 @@ void modulator::put_tx( short txchar )
 	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP )
 	{
 		m_temp_need_shutoff = true;
-		if( m_state==state::tune )
+		if( m_state == state::tune )
 			m_need_shutoff = true;
 	}
 	else if( txchar == ctrl_chars::TX_CNTRL_NOSQTAIL )
