@@ -96,11 +96,10 @@ bool imd_calculator::calc_energies( std::complex<int> samp )
 		return false;
 }
 /* ------------------------------------------------------------------------- */
-bool imd_calculator::calc_value( int &imd_val )
+bool imd_calculator::calc_value()
 {
 	m_snr = log10_ll<10>( m_energy[0] ) - log10_ll<10>( m_energy[1] );
 	m_imd = log10_ll<10>( m_energy[2] ) - log10_ll<10>( m_energy[0] );
-	imd_val = int(m_imd);
 	return m_snr > (-m_imd+6);
 }
 
