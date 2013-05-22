@@ -73,22 +73,13 @@ public:
 		b125
 	};
 	//Construct the decoder object
-	explicit decoder( samplerate_type sample_rate, std::size_t ch_queue_len );
+	explicit decoder( samplerate_type sample_rate, handler_t callback );
 	//Process input sample buffer
-	virtual unsigned operator()( const sample_type* samples, std::size_t sample_size );
+	virtual void operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
 	const signal_vector_type& get_vector_data( ) const
 	{
 		return m_angle_calc.get_iq_phase_array();
-	}
-	virtual short read_char()
-	{
-		char ch;
-		return m_chqueue.pop( ch )?(NO_CHAR):( ch );
-	}
-	virtual size_t get_count() const
-	{
-		return m_chqueue.size();
 	}
 	//Reset decoder
 	virtual void reset();
@@ -161,7 +152,6 @@ private:
     dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long long> > m_fir2_dec;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_bit_fir;
     dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_freq_fir;
-    fnd::dyn_queue<char> m_chqueue;
 };
 
 /* ------------------------------------------------------------------------- */

@@ -16,19 +16,45 @@
 namespace ham {
 namespace psk {
 
+
 /* ------------------------------------------------------------------------- */
-enum class event
+//Event type passed as an arg
+struct event
 {
-	rx_char,
-	tx_char,
-	spectrum,
-	imd_rdy,
-	clk_err
+	enum class type	: char
+	{
+		rx_char,
+		tx_char,
+		spectrum,
+		imd_rdy,
+		clk_err
+	} evt;
+	struct imd_s
+	{
+		imd_s( int v, bool n)
+		: value(v), noise(n )
+		{}
+		int value;
+		bool noise;
+	};
+	union
+	{
+		imd_s imd;
+		int clkerr;
+		int chr;
+	};
+	event( int imd, bool noise )
+		: evt( type::imd_rdy ), imd( imd, noise )
+		 {}
+	event( type ev, int value )
+		: evt(ev), clkerr( value )
+	{}
 };
 
 /* ------------------------------------------------------------------------- */
 //Status channel
-typedef std::function <int( event, int , int )> event_handler_t;
+typedef std::function <void( int, const event &ev )> event_handler_t;
+
 
 /* ------------------------------------------------------------------------- */
 class rx_codec
@@ -37,25 +63,23 @@ class rx_codec
 	rx_codec(const rx_codec&) = delete;
 	rx_codec& operator=(const rx_codec&) = delete;
 public:
-	//Retuer event mask
-	enum event
-	{
-		EV_RX_CHAR = 1,
-		EV_CLK_ERR = 2,
-		EV_IMD_RDY = 4,
-		EV_QUE_OVERFLOW = 8
-	} ;
-	static constexpr auto NO_CHAR = -1;
-	rx_codec()
+	typedef std::function <void( const event &ev )> handler_t;
+	rx_codec( handler_t callback )
+		: m_callback( callback )
 	{}
-	virtual unsigned operator()( const sample_type* samples, std::size_t sample_size ) = 0;
+	virtual void operator()( const sample_type* samples, std::size_t sample_size ) = 0;
 	virtual void reset() = 0;
-	virtual short read_char() = 0;
-	virtual size_t get_count() const = 0;
 	virtual void set_frequency( int freq ) = 0;
 	virtual int get_frequency( ) const = 0;
 	virtual sqelch_value_type get_signal_level() const = 0;
-	virtual void set_squelch(sqelch_value_type , squelch_mode) = 0;
+	virtual void set_squelch( sqelch_value_type , squelch_mode ) = 0;
+protected:
+	void callback_notify( const event &ev )
+	{
+		m_callback( ev );
+	}
+private:
+	const handler_t m_callback;
 };
 /* ------------------------------------------------------------------------- */
 class tx_codec
@@ -63,8 +87,12 @@ class tx_codec
 	//Make object noncopyable
 	tx_codec(const tx_codec&) = delete;
 	tx_codec& operator=(const tx_codec&) = delete;
+private:
+	typedef std::function <void( const event &ev )> handler_t;
 public:
-	tx_codec() {}
+	tx_codec()
+	{
+	}
 	virtual void put_tx( short ) = 0;
 	virtual void clear_tx() = 0;
 	virtual void set_freqency( int freq ) = 0;

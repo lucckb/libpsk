@@ -368,13 +368,13 @@ namespace
 
 /* ------------------------------------------------------------------------- */
 //Construct the decoder object
-decoder::decoder( samplerate_type sample_rate,  std::size_t ch_queue_len  ) :
+decoder::decoder( samplerate_type sample_rate, handler_t callback  ) :
+	  rx_codec( callback ),
 	  m_nco_phzinc( (PI2I*m_rx_frequency)/int(sample_rate) ),
 	  m_sample_freq( sample_rate ),
 	  m_afc(m_nco_phzinc, 50*PI2I/int(sample_rate) ),
       m_fir1_dec( Dec4LPCoef ), m_fir2_dec( Dec4LPCoef ),
-      m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef ),
-      m_chqueue( ch_queue_len )
+      m_bit_fir( BitFirCoef ), m_freq_fir( FreqFirCoef )
 {
 	//Initialy reset the decoder
 	reset();
@@ -440,11 +440,10 @@ int decoder::decode_symb( std::complex<int> newsamp )
 
 /* ------------------------------------------------------------------------- */
 //Process input sample buffer
-unsigned decoder::operator()( const sample_type* samples, std::size_t sample_size )
+void decoder::operator()( const sample_type* samples, std::size_t sample_size )
 {
 	const int mod16_8 = (m_baudrate==baudrate::b63)?(8):(16);
 	m_afc.handle_sample_timer( m_nco_phzinc );
-	unsigned ret = 0;
 	for( std::size_t smpl = 0; smpl<sample_size; smpl++ )	// put new samples into Queue
 	{
         m_fir1_dec(
@@ -488,15 +487,14 @@ unsigned decoder::operator()( const sample_type* samples, std::size_t sample_siz
 						auto ch = decode_symb( bit_signal );
 						if( ch > 0 )
 						{
-							ret |= rx_codec::EV_RX_CHAR;
-							if( m_chqueue.push( ch ) )
-								ret |= rx_codec::EV_QUE_OVERFLOW;
+							const event ev(event::type::rx_char, ch );
+							callback_notify( ev );
 						}
 					}
 					if( clk_err_valid )
 					{
-						//m_callback( cb_clkerror, m_sync.get_clk_error() , 0 );
-						ret |= rx_codec::EV_CLK_ERR;
+						const event ev(event::type::clk_err, m_sync.get_clk_error() );
+						callback_notify( ev );
 					}
             	}
 				// Calculate IMD if only idles have been received and the energies collected
@@ -506,13 +504,14 @@ unsigned decoder::operator()( const sample_type* samples, std::size_t sample_siz
 					{
 						if( m_calc_imd.calc_value() )
 						{
-							//if( m_callback ) m_callback( cb_imdrdy, m_calc_imd.get_value(), 0x00 );
+							const event ev( m_calc_imd.get_value(), false );
+							callback_notify( ev );
 						}
 						else
 						{
-							//if( m_callback ) m_callback( cb_imdrdy, m_calc_imd.get_value(), 0x80 );
+							const event ev( m_calc_imd.get_value(), true );
+							callback_notify( ev );
 						}
-						ret |= rx_codec::EV_IMD_RDY;
 					}
 				}
 				else
@@ -522,7 +521,6 @@ unsigned decoder::operator()( const sample_type* samples, std::size_t sample_siz
 	}
 	m_sample_cnt = m_sample_cnt%16;
 	m_rx_frequency = ((m_nco_phzinc + m_afc.get_freq_error())*m_sample_freq)/PI2I;
-	return ret;
 }
 
 /* ------------------------------------------------------------------------- */
