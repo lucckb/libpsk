@@ -12,10 +12,10 @@
 #include <functional>
 #include <array>
 #include "psk/spectrum_calculator.hpp"
+#include "codec_types.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
-
 
 /* ------------------------------------------------------------------------- */
 //Event type argument structure
@@ -152,48 +152,69 @@ class trx_device_base	//Add noncopyable
 public:
 	enum class mode		//Hardware device mode
 	{
-		off,
-		on,
-		transmit
+		off,		//TRX is disabled
+		on,			//TRX is ON
+		transmit	//TRX is OFF
 	};
 	/* Invalid values defs */
 	static constexpr auto INVALID = -1;
 	static constexpr auto ALL = -1;
 	/* Constructor */
-	trx_device_base( event_handler_t evt_callback );
+	trx_device_base( event_handler_t evt_callback )
+		: m_evt_callback( evt_callback )
+	{}
 	/* Destructor */
-	~trx_device_base();
+	~trx_device_base()
+	{
+		destroy_tx_codec();
+		destroy_rx_codec();
+	}
 	/* Set RX or TX dev mode */
-	void set_mode( mode );
+	void set_mode( mode m );
+	/* Get RX or TX dev mode */
+	mode get_mode() const
+	{
+		return m_mode;
+	}
 	//Register RX codec
-	int add_rx_codec( const rx_codec* );
+	int add_rx_codec( rx_codec* codec );
 	// Destroy RX codec and remove from pool
-	void destroy_rx_codec( int idx = ALL );
+	bool destroy_rx_codec( int idx = ALL );
 	// Add codec to the poll
-	int add_tx_codec( const tx_codec *);
+	bool add_tx_codec( const tx_codec *);
 	//Destroy TX codec and remove from pool
-	void destroy_tx_codec();
+	void destroy_tx_codec()
+	{
+		delete m_tx_codec;
+		m_tx_codec = nullptr;
+	}
 	//Spectrum calculator object
 	const spectrum_calculator& get_spectrum() const;
 	// Get RX object by IDX
-	rx_codec* get_rx( int idx );
+	rx_codec* get_rx_codec( int idx )
+	{
+		return idx<MAX_CODECS?m_rx_codecs[idx]:nullptr;
+	}
 	// Get TX object
-	tx_codec* get_tx();
+	tx_codec* get_tx_codec()
+	{
+		return m_tx_codec;
+	}
 	//Lock and unlock device
 	virtual void lock( bool lock ) = 0;
 private:
 	// Initialize sound hardware in selected mode
-	virtual int init_sound_hardware( mode m ) = 0;
+	virtual int setup_sound_hardware( mode m ) = 0;
 	//ADC vector func
-	void adc_hw_isr( const sample_type *buf, size_t len );
+	void adc_hardware_isr( const sample_type *buf, size_t len );
 	//DAC vector func
-	void dac_hw_isr( sample_type *buf, size_t len );
+	void dac_hardware_isr( sample_type *buf, size_t len );
 private:
 	tx_codec* m_tx_codec { nullptr };	/* Transmit codec ptr */
 	std::array<rx_codec*, MAX_CODECS> m_rx_codecs {{}};	/* RX codecs array */
 	spectrum_calculator m_spectrum;		/* Spectrum calculator object */
-	short m_nrxcodecs {};	/* Number of objects */
 	const event_handler_t m_evt_callback;	/* Event handler object */
+	mode m_mode { mode::off };				/* Current device mode */
 };
 
 
