@@ -52,7 +52,7 @@ struct event
 };
 
 /* ------------------------------------------------------------------------- */
-//Status channel
+//Status channel channel no and event
 typedef std::function <void( int, const event &ev )> event_handler_t;
 
 
@@ -67,6 +67,7 @@ public:
 	rx_codec( handler_t callback )
 		: m_callback( callback )
 	{}
+	virtual ~rx_codec() {}
 	virtual void operator()( const sample_type* samples, std::size_t sample_size ) = 0;
 	virtual void reset() = 0;
 	virtual void set_frequency( int freq ) = 0;
@@ -87,23 +88,29 @@ class tx_codec
 	//Make object noncopyable
 	tx_codec(const tx_codec&) = delete;
 	tx_codec& operator=(const tx_codec&) = delete;
-private:
-	typedef std::function <void( const event &ev )> handler_t;
 public:
+	typedef std::function <void( const event &ev )> handler_t;
 	tx_codec()
-	{
-	}
+	{}
+	tx_codec( handler_t callback )
+		: m_callback( callback )
+	{}
+	virtual ~tx_codec() {}
 	virtual void put_tx( short ) = 0;
 	virtual void clear_tx() = 0;
 	virtual void set_freqency( int freq ) = 0;
 	virtual size_t get_count() const = 0;
 	virtual void reset() = 0;
-	enum event
+	/* Return true if need to switch back to RX */
+	virtual bool operator()( sample_type* sample, size_t len ) = 0;
+protected:
+	void callback_notify( short ch )
 	{
-		EV_SEND_CHAR_COMPLETE  = 1,
-		EV_TX_COMPLETE    	   = 2
-	};
-	virtual unsigned operator()( sample_type* sample, size_t len ) = 0;
+		const event ev( event::type::tx_char, ch );
+		if( m_callback ) m_callback( ev );
+	}
+private:
+	const handler_t m_callback;
 };
 
 /* ------------------------------------------------------------------------- */

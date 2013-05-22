@@ -224,11 +224,10 @@ void modulator::put_tx( short txchar )
 }
 /* ------------------------------------------------------------------------- */
 //Operator on new samples
-unsigned modulator::operator()( sample_type* sample, size_t len )
+bool modulator::operator()( sample_type* sample, size_t len )
 {
 	//Amplitude factor
 	int v = 0;
-	unsigned r = 0;
 	const auto ramp_size =  (m_sample_freq*RATE_SCALE/m_symbol_rate);
 	for( size_t i=0; i<len; i++ )		//calculate n samples of tx data stream
 	{
@@ -255,11 +254,10 @@ unsigned modulator::operator()( sample_type* sample, size_t len )
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][1];
 			v = v & 0x000F;	//keep bounded to 16
 			if( m_state == state::sending && ch > 0 )
-				r |= tx_codec::EV_SEND_CHAR_COMPLETE;
+				callback_notify( ch );
 		}
 	}
-	if( m_state==state::off ) r |= tx_codec::EV_TX_COMPLETE;
-	return r;
+	return ( m_state==state::off );
 }
 
 
@@ -335,6 +333,8 @@ int modulator::update_state_chr()
 				m_state = state::postamble;
 			}
 			m_amble_ptr = 0;
+			break;
+		default:
 			break;
 	}
 	return( ch );

@@ -55,7 +55,7 @@ public:
 	//Constructor
 	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
 	//Operator on new samples
-	virtual unsigned operator()( sample_type* sample, size_t len );
+	virtual bool operator()( sample_type* sample, size_t len );
 	//Set char into the modulator
 	virtual void put_tx( short c );
 	//Clear queue
