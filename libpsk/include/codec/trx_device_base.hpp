@@ -18,45 +18,50 @@ namespace psk {
 
 
 /* ------------------------------------------------------------------------- */
-//Event type passed as an arg
+//Event type argument structure
 struct event
 {
 	enum class type	: char
 	{
-		rx_char,
-		tx_char,
-		spectrum,
-		imd_rdy,
-		clk_err
+		rx_char,			//receive char event type
+		tx_char,			//Transmit char event type
+		spectrum,			//Spectrum event type
+		imd_rdy,			//IMD signal event
+		clk_err				//CLK error event
 	} evt;
 	struct imd_s
 	{
 		imd_s( int v, bool n)
 		: value(v), noise(n )
 		{}
-		int value;
-		bool noise;
+		int value;					//IMD value
+		bool noise;					//IMD over noise floor
 	};
 	union
 	{
-		imd_s imd;
-		int clkerr;
-		int chr;
+		imd_s imd;					//IMD signal description
+		int clkerr;					//CLK error description
+		int chr;					//Received char
 	};
+	//Constructor version 1
 	event( int imd, bool noise )
 		: evt( type::imd_rdy ), imd( imd, noise )
 		 {}
+	//Constructor version 2
 	event( type ev, int value )
 		: evt(ev), clkerr( value )
 	{}
 };
 
 /* ------------------------------------------------------------------------- */
-//Status channel channel no and event
+/* Function event handler type
+ * first parameter channel number
+ * second channel type
+ */
 typedef std::function <void( int, const event &ev )> event_handler_t;
 
-
 /* ------------------------------------------------------------------------- */
+/* Receiver codec base class */
 class rx_codec
 {
 	//Make object noncopyable
@@ -83,6 +88,7 @@ private:
 	const handler_t m_callback;
 };
 /* ------------------------------------------------------------------------- */
+/* Transmitter codec base class */
 class tx_codec
 {
 	//Make object noncopyable
@@ -112,8 +118,31 @@ protected:
 private:
 	const handler_t m_callback;
 };
+/* ------------------------------------------------------------------------- */
+//Safe lock device engine
+template <typename T>
+class safe_lock
+{
+	safe_lock(const safe_lock&) = delete;
+	safe_lock& operator=(const safe_lock&) = delete;
+public:
+	safe_lock( T &obj )
+	  : m_obj(obj )
+	{
+		m_obj.lock( true );
+	}
+	~safe_lock( )
+	{
+		m_obj.lock( false );
+	}
+private:
+	T& m_obj;
+};
 
 /* ------------------------------------------------------------------------- */
+/* TRX base class hardware independent for managing the
+ * transmitter receiver code
+ */
 class trx_device_base	//Add noncopyable
 {
 	//Make object noncopyable
@@ -121,31 +150,50 @@ class trx_device_base	//Add noncopyable
 	trx_device_base& operator=(const trx_device_base&) = delete;
 	static constexpr auto MAX_CODECS = 4;
 public:
-	enum class mode
+	enum class mode		//Hardware device mode
 	{
 		off,
 		on,
 		transmit
 	};
-	//Set mode
+	/* Invalid values defs */
+	static constexpr auto INVALID = -1;
+	static constexpr auto ALL = -1;
+	/* Constructor */
+	trx_device_base( event_handler_t evt_callback );
+	/* Destructor */
+	~trx_device_base();
+	/* Set RX or TX dev mode */
 	void set_mode( mode );
-	/* It is not manage memory */
-	int register_rx_codec( const rx_codec* );	//Register RX codec
-	void deregister_rx_codec( int idx ); 		//Codec must be deregisrered manually
+	//Register RX codec
+	int add_rx_codec( const rx_codec* );
+	// Destroy RX codec and remove from pool
+	void destroy_rx_codec( int idx = ALL );
+	// Add codec to the poll
+	int add_tx_codec( const tx_codec *);
+	//Destroy TX codec and remove from pool
+	void destroy_tx_codec();
+	//Spectrum calculator object
 	const spectrum_calculator& get_spectrum() const;
+	// Get RX object by IDX
 	rx_codec* get_rx( int idx );
+	// Get TX object
 	tx_codec* get_tx();
+	//Lock and unlock device
+	virtual void lock( bool lock ) = 0;
 private:
-	virtual int activate_rx_mode( bool enable );
-	virtual int activate_tx_mode( bool enable );
-	//AC and CA handler
-	void adc_handler( const sample_type *buf, size_t len );
-	void dac_handler( sample_type *buf, size_t len );
+	// Initialize sound hardware in selected mode
+	virtual int init_sound_hardware( mode m ) = 0;
+	//ADC vector func
+	void adc_hw_isr( const sample_type *buf, size_t len );
+	//DAC vector func
+	void dac_hw_isr( sample_type *buf, size_t len );
 private:
-	tx_codec* m_tx_codec;
-	std::array<rx_codec*, MAX_CODECS> m_rx_codecs;
-	spectrum_calculator m_spectrum;
-	short m_nrxcodecs;
+	tx_codec* m_tx_codec { nullptr };	/* Transmit codec ptr */
+	std::array<rx_codec*, MAX_CODECS> m_rx_codecs {{}};	/* RX codecs array */
+	spectrum_calculator m_spectrum;		/* Spectrum calculator object */
+	short m_nrxcodecs {};	/* Number of objects */
+	const event_handler_t m_evt_callback;	/* Event handler object */
 };
 
 
