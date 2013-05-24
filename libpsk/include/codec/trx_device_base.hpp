@@ -58,7 +58,7 @@ struct event
  * first parameter channel number
  * second channel type
  */
-typedef std::function <void( int, const event &ev )> event_handler_t;
+typedef std::function <void( const event &ev )> event_handler_t;
 
 /* ------------------------------------------------------------------------- */
 /* Receiver codec base class */
@@ -181,7 +181,11 @@ public:
 	// Destroy RX codec and remove from pool
 	bool destroy_rx_codec( int idx = ALL );
 	// Add codec to the poll
-	bool add_tx_codec( const tx_codec *);
+	bool add_tx_codec( tx_codec *c)
+	{
+		m_tx_codec = c;
+		return false;
+	}
 	//Destroy TX codec and remove from pool
 	void destroy_tx_codec()
 	{
@@ -205,10 +209,16 @@ public:
 private:
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( mode m ) = 0;
+protected:
 	//ADC vector func
 	void adc_hardware_isr( const sample_type *buf, size_t len );
 	//DAC vector func
 	void dac_hardware_isr( sample_type *buf, size_t len );
+	//Set mode
+	void set_mode_off()
+	{
+		m_mode = mode::off;
+	}
 private:
 	tx_codec* m_tx_codec { nullptr };	/* Transmit codec ptr */
 	std::array<rx_codec*, MAX_CODECS> m_rx_codecs {{}};	/* RX codecs array */

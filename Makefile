@@ -5,7 +5,7 @@ TARGET	   = psk31test
 
 #Optimalization [0,1,2,3,s]
 # 0 - none optimalization, s - size optimalization 3 - most optimized
-OPT ?= s 
+OPT ?= 0
 
 
 #Common flags 
@@ -25,7 +25,8 @@ CFLAGS += -std=gnu99
 CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
 
 #LDflags libraries etc.
-LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample
+LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample -lpulse-simple
+
 
 #Per file listing
 LISTING = n
@@ -35,7 +36,7 @@ DEBUG ?=  y
 
 #Source C++ files
 CPPSRC += $(wildcard *.cpp) $(wildcard libpsk/src/psk/*.cpp) $(wildcard libpsk/src/codec/*.cpp)
-
+CPPSRC += $(wildcard libpsk/src/port/pulse/*.cpp)
 include unix.mk
 
 

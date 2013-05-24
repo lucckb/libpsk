@@ -7,7 +7,7 @@
 #include <psk/modulator.hpp>
 #include <functional>
 #include <codec/trx_device_base.hpp>
-
+#include <port/pulse/pulse_device.hpp>
 
 #ifndef __arm__
 #include <functional>
@@ -500,8 +500,12 @@ int encoder_main( const char *filename )
 }
 
 
+
+
+
 /* *************************** MAIN LOOP ********************************** */
 
+#if 0	/* Disabled for real pulse testing */
 int main(int argc, const char * const *argv )
 {
 	 if(argc < 2)
@@ -536,8 +540,55 @@ int main(int argc, const char * const *argv )
 		 return -1;
 	 }
 }
+#endif
 
 
+
+void decoder_callback( const ham::psk::event &ev  )
+{
+	using namespace ham::psk;
+	using namespace std;
+	switch( ev.evt )
+	{
+	case event::type::rx_char:
+		cout << "GOT char " << char(ev.chr) << endl;
+		break;
+	case event::type::clk_err:
+		cout << "CLKERR value " << ev.clkerr << endl;
+		break;
+	case event::type::imd_rdy:
+		cout << "IMDRDY value " << ev.imd.value << " " << ev.imd.noise << endl;
+		break;
+	default:
+		cout << "Unknown evt" << endl;
+	}
+}
+
+
+#if 1
+int main(int argc, const char * const *argv )
+{
+	namespace psk = ham::psk;
+	//FIX this API
+	psk::modulator * const mod = new psk::modulator(8000, 2124, 1024);
+	psk::decoder * dec = new psk::decoder(8000, decoder_callback );
+	psk::pulse_device pulse( decoder_callback );
+	pulse.add_tx_codec( mod );
+	pulse.add_rx_codec( dec );
+	dec->set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
+	dec->set_frequency( 2125 );
+	dec->set_afc_limit( 100 ); //TMP
+	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
+	mod->set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
+	for(size_t i=0;i<sizeof txt -1; i++)
+		mod->put_tx( txt[i] );
+
+	pulse.set_mode( psk::trx_device_base::mode::transmit );
+
+
+	pulse.join();
+}
+#endif
 
 #else /*ARM defined test only */
 
