@@ -47,7 +47,7 @@ void pulse_device::lock( bool lock )
 // Initialize sound hardware in selected mode
 int pulse_device::setup_sound_hardware( trx_device_base::mode m )
 {
-
+	//Hardware  SETUP state
 	if( m == trx_device_base::mode::on && get_mode()!=trx_device_base::mode::on )
 	{
 		if( get_mode()==trx_device_base::mode::transmit )
@@ -68,28 +68,32 @@ int pulse_device::setup_sound_hardware( trx_device_base::mode m )
 		const int ret = enable_hw_tx();
 		if( ret != 0 ) return ret;
 	}
+	//Thread specific switch
 	if( get_mode()!=trx_device_base::mode::off && m == trx_device_base::mode::off )
 	{
 		//Disable and wait for stop
 		m_thread_running = false;
 		m_thread->join();
+		return m_thread_status;
 	}
 	else if( get_mode()==trx_device_base::mode::off && m != trx_device_base::mode::off  )
 	{
 		m_thread_running = true;
 		m_thread.reset( new std::thread( &pulse_device::hardware_sound_thread, this ) );
+		return 0;
 	}
-	return 0;
+	return trx_device_base::INVALID;
 }
 /* ------------------------------------------------------------------------- */
 //Hardware sound thread func
 void pulse_device::hardware_sound_thread()
 {
-	for(;m_thread_running;)
+	int errcode = 0;
+	for(; m_thread_running && !errcode ;)
 	{
 		m_thrmutex.lock();
-		if     ( get_mode()==trx_device_base::mode::on ) 	   receive_thread();
-		else if( get_mode()==trx_device_base::mode::transmit ) transmit_thread();
+		if     ( get_mode()==trx_device_base::mode::on ) 	   errcode = receive_thread();
+		else if( get_mode()==trx_device_base::mode::transmit ) errcode = transmit_thread();
 		m_thrmutex.unlock();
 	}
 	if( get_mode()==trx_device_base::mode::on )
@@ -104,10 +108,11 @@ void pulse_device::hardware_sound_thread()
 		set_mode_off();
 		disable_hw_tx();
 	}
+	m_thread_status = errcode;
 }
 /* ------------------------------------------------------------------------- */
 //Receive and transmit thread
-bool pulse_device::receive_thread()
+int pulse_device::receive_thread()
 {
 	int error = 0;
 	/* Record some data ... */
@@ -120,7 +125,7 @@ bool pulse_device::receive_thread()
 }
 /* ------------------------------------------------------------------------- */
 //Transmit thread
-bool pulse_device::transmit_thread()
+int pulse_device::transmit_thread()
 {
 	int error = 0;
 	dac_hardware_isr( &m_audio_buf[0], audio_buf_len  );
@@ -175,6 +180,7 @@ int pulse_device::disable_hw_tx()
 	m_pa_ctx = nullptr;
 	return error;
 }
+
 /* ------------------------------------------------------------------------- */
 } /* namespace psk */
 } /* namespace ham */

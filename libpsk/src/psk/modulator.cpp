@@ -137,9 +137,10 @@ constexpr int modulator::m_vect_lookup[6][2];
 
 /* ------------------------------------------------------------------------- */
 //Modulator
-modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len )
-	: 	 m_sample_freq( sample_freq ),  m_p_psk_tx_i(psk_shapes::Z), m_p_psk_tx_q(psk_shapes::Z),
-		 m_chqueue( char_que_len )
+modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len, tx_codec::handler_t callback )
+	: 	 tx_codec( callback ),
+		 m_sample_freq( sample_freq ),  m_p_psk_tx_i(psk_shapes::Z),
+	  	 m_p_psk_tx_q(psk_shapes::Z), m_chqueue( char_que_len )
 {
 
 	//TODO convert to array

@@ -476,7 +476,7 @@ private:
 int encoder_main( const char *filename )
 {
 	class audio_writer ww( filename );
-	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024 );
+	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024, nullptr );
 	//mod.set_auto_shutoff( false );
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
 	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
@@ -559,6 +559,9 @@ void decoder_callback( const ham::psk::event &ev  )
 	case event::type::imd_rdy:
 		cout << "IMDRDY value " << ev.imd.value << " " << ev.imd.noise << endl;
 		break;
+	case event::type::tx_char:
+		cout << "CHRTX " << char(ev.chr) << endl;
+		break;
 	default:
 		cout << "Unknown evt" << endl;
 	}
@@ -570,7 +573,7 @@ int main(int argc, const char * const *argv )
 {
 	namespace psk = ham::psk;
 	//FIX this API
-	psk::modulator * const mod = new psk::modulator(8000, 2124, 1024);
+	psk::modulator * const mod = new psk::modulator(8000, 2124, 1024, decoder_callback);
 	psk::decoder * dec = new psk::decoder(8000, decoder_callback );
 	psk::pulse_device pulse( decoder_callback );
 	pulse.add_tx_codec( mod );

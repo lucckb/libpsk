@@ -53,7 +53,7 @@ public:
 		b125				//Baudrate 125
 	};
 	//Constructor
-	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len );
+	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len, tx_codec::handler_t callback );
 	//Operator on new samples
 	virtual bool operator()( sample_type* sample, size_t len );
 	//Set char into the modulator

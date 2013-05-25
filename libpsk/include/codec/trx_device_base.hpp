@@ -27,7 +27,7 @@ struct event
 		tx_char,			//Transmit char event type
 		spectrum,			//Spectrum event type
 		imd_rdy,			//IMD signal event
-		clk_err				//CLK error event
+		clk_err,			//CLK error event
 	} evt;
 	struct imd_s
 	{
@@ -96,8 +96,6 @@ class tx_codec
 	tx_codec& operator=(const tx_codec&) = delete;
 public:
 	typedef std::function <void( const event &ev )> handler_t;
-	tx_codec()
-	{}
 	tx_codec( handler_t callback )
 		: m_callback( callback )
 	{}

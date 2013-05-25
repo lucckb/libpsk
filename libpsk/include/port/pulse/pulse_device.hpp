@@ -49,9 +49,9 @@ private:
 	//Hardware sound thread func
 	void hardware_sound_thread();
 	//Receive and transmit thread
-	bool receive_thread();
+	int receive_thread();
 	//Transmit thread
-	bool transmit_thread();
+	int transmit_thread();
 	//Hardware funcs
 	int enable_hw_rx();
 	int disable_hw_rx();
@@ -62,6 +62,7 @@ private:
 	std::unique_ptr< std::thread > m_thread;		//TX thread
 	std::mutex m_thrmutex;							//Thread mutex
 	volatile bool m_thread_running {};				//Thread
+	volatile int  m_thread_status {};				//Thread error status
 	pa_simple *m_pa_ctx;							//PA CTX
 	static constexpr auto audio_buf_len = 1024;
 	std::array<short,audio_buf_len> m_audio_buf;
