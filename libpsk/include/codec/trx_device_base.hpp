@@ -13,6 +13,8 @@
 #include <array>
 #include "psk/spectrum_calculator.hpp"
 #include "codec_types.hpp"
+#include "codec/trx_device_base.hpp"
+#include "codec/modulation_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -86,6 +88,7 @@ public:
 	virtual int get_frequency( ) const = 0;
 	virtual sqelch_value_type get_signal_level() const = 0;
 	virtual void set_squelch( sqelch_value_type , squelch_mode ) = 0;
+	virtual int set_mode( const modulation_config_base &config ) = 0;
 protected:
 	void callback_notify( const event &ev )
 	{
@@ -112,6 +115,7 @@ public:
 	virtual void set_freqency( int freq ) = 0;
 	virtual size_t get_count() const = 0;
 	virtual void reset() = 0;
+	virtual int set_mode( const  modulation_config_base &config ) = 0;
 	/* Return true if need to switch back to RX */
 	virtual bool operator()( sample_type* sample, size_t len ) = 0;
 protected:

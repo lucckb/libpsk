@@ -57,7 +57,8 @@ namespace
             , sample_max( std::numeric_limits<double>::min() )
     		, wfile(nullptr)
         {
-            psk_dec.set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
+            namespace psk = ham::psk;
+        	psk_dec.set_mode( psk::mod_psk_config(psk::mod_psk_config::mode::qpsku, psk::mod_psk_config::baud::b31) );
             psk_dec.set_frequency( 2125 );
             //psk_dec.set_squelch_tresh( 50, ham::psk::squelch_mode::fast );
             psk_dec.set_afc_limit( 100 ); //TMP
@@ -582,7 +583,7 @@ int main(int /*argc*/, const char * const */*argv*/ )
 	psk::decoder * dec = new psk::decoder(pulse.get_rx_sample_rate(), decoder_callback );
 	pulse.add_tx_codec( mod );
 	pulse.add_rx_codec( dec );
-	dec->set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );
+	dec->set_mode( psk::mod_psk_config( psk::mod_psk_config::mode::qpsku,  psk::mod_psk_config::baud::b31 ) );
 	dec->set_frequency( 2125 );
 	dec->set_afc_limit( 100 ); //TMP
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";

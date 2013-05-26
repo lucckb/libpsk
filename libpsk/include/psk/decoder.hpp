@@ -27,6 +27,8 @@
 #include "codec/codec_types.hpp"
 #include "codec/trx_device_base.hpp"
 #include "psk/dyn_queue.hpp"
+#include "codec/psk_config.hpp"
+
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -54,23 +56,13 @@ class decoder : public rx_codec {
 	static constexpr int SCALE = 1<<15;
 	static constexpr int PI2I = 1<<15;
 public:
+	static constexpr auto RCODE_ERR = -1;
+	static constexpr auto RCODE_OK = 0;
 	enum cbevent
 	{
 		cb_rxchar,
 		cb_clkerror,
 		cb_imdrdy
-	};
-	enum class mode
-	{
-		bpsk,			//BPSK
-		qpsku,			//QPSK USB
-		qpskl			//QPSK LSB
-	};
-	enum class baudrate
-	{
-		b31,
-		b63,
-		b125
 	};
 	//Construct the decoder object
 	explicit decoder( samplerate_type sample_rate, handler_t callback );
@@ -88,11 +80,7 @@ public:
 	virtual void set_frequency( int freq );
 
 	//Set detector mode
-	void set_mode( mode mode, baudrate rate )
-	{
-		m_rx_mode = mode;
-		m_baudrate = rate;
-	}
+	virtual int set_mode( const modulation_config_base& cfg );
 	//Set AFC limit
 	void set_afc_limit( int limit );
 	//Get current frequency
@@ -115,12 +103,13 @@ public:
 		m_squelch.set_tresh( tresh, mode );
 	}
 private:
+	typedef mod_psk_config::mode mode;
+	typedef mod_psk_config::baud baudrate;
 	int decode_symb( std::complex<int> newsamp );
 	bool is_qpsk() const
 	{
 		return m_rx_mode != mode::bpsk;
 	}
-private:
 	//Numeric controlled oscillator and mixer
 	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };

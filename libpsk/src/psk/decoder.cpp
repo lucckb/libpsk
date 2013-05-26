@@ -411,6 +411,22 @@ void decoder::reset()
 }
 
 /* ------------------------------------------------------------------------- */
+/* Set modulator config */
+int decoder::set_mode( const modulation_config_base& _cfg )
+{
+	if( _cfg.cfg_type() == modulation_config_base::type::psk )
+	{
+		const mod_psk_config& cfg = static_cast<const mod_psk_config&>(_cfg);
+		m_rx_mode = cfg.mmode;
+		m_baudrate = cfg.baudrate;
+		return RCODE_OK;
+	}
+	else
+	{
+		return RCODE_ERR;
+	}
+}
+/* ------------------------------------------------------------------------- */
 int decoder::decode_symb( std::complex<int> newsamp )
 {
 	//Successive fix it

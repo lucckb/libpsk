@@ -29,6 +29,8 @@ class modulator : public tx_codec {
 	modulator(const modulator&) = delete;
 	modulator& operator=(const modulator&) = delete;
 public:
+	static constexpr auto RCODE_ERR = -1;
+	static constexpr auto RCODE_OK = 0;
 	enum class state
 	{
 		off,				//Decoder is off
@@ -49,7 +51,7 @@ public:
 	//Set frequency
 	virtual void set_freqency( int frequency );
 	//Set mode
-	void set_mode( const mod_psk_config &cfg );
+	virtual int set_mode( const modulation_config_base& cfg );
 	//Get number of chars remaining
 	virtual size_t get_count() const
 	{

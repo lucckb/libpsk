@@ -159,8 +159,13 @@ void  modulator::set_freqency( int frequency )
 }
 /* ------------------------------------------------------------------------- */
 //Set mode
-void modulator::set_mode( const mod_psk_config &cfg )
+int modulator::set_mode( const modulation_config_base& _cfg )
 {
+	if( _cfg.cfg_type() != modulation_config_base::type::psk )
+	{
+		return RCODE_ERR;
+	}
+	const mod_psk_config& cfg = static_cast<const mod_psk_config&>(_cfg);
 	m_mode = cfg.mmode;
 	m_ramp = 0;
 	if( cfg.baudrate == baudrate::b63 )
@@ -191,6 +196,7 @@ void modulator::set_mode( const mod_psk_config &cfg )
 	}
 	m_psk_period_update = (m_sample_freq*RATE_SCALE)/ m_symbol_rate;
 	m_encoder.set_mode( cfg.mmode );
+	return RCODE_OK;
 }
 
 /* ------------------------------------------------------------------------- */
