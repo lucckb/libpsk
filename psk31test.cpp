@@ -503,8 +503,6 @@ int encoder_main( const char *filename )
 
 
 
-
-
 /* *************************** MAIN LOOP ********************************** */
 
 #if 0	/* Disabled for real pulse testing */
@@ -564,6 +562,9 @@ void decoder_callback( const ham::psk::event &ev  )
 	case event::type::tx_char:
 		cout << "CHRTX " << char(ev.chr) << endl;
 		break;
+	case event::type::tx_end:
+		cout << "TRANSMIT FINISHED" << endl;
+		break;
 	default:
 		cout << "Unknown evt" << endl;
 	}
@@ -571,7 +572,7 @@ void decoder_callback( const ham::psk::event &ev  )
 
 
 #if 1
-int main(int argc, const char * const *argv )
+int main(int /*argc*/, const char * const */*argv*/ )
 {
 	namespace psk = ham::psk;
 	psk::pulse_device pulse( decoder_callback );

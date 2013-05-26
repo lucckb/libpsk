@@ -7,6 +7,7 @@
 
 /* ------------------------------------------------------------------------- */
 #include "codec/trx_device_base.hpp"
+
 /* ------------------------------------------------------------------------- */
 //Namespace def
 namespace ham {
@@ -80,6 +81,8 @@ void trx_device_base::adc_process( const sample_type *buf, size_t len )
 		//True if all samples completed
 		if( m_spectrum.copy_samples( buf, len ) )
 			m_spectrum_tmr = 0;
+		//Inform that user can calculate the FFT
+		callback_notify( event::type::spectrum );
 	}
 }
 /* ------------------------------------------------------------------------- */
@@ -89,7 +92,10 @@ bool trx_device_base::dac_process( sample_type *buf, size_t len )
 	if ( (*m_tx_codec)( buf, len ) )
 	{
 		m_mode = mode::on;
+		//Notify switch to RX
+		callback_notify( event::type::tx_end );
 		return true;
+
 	}
 	return false;
 }

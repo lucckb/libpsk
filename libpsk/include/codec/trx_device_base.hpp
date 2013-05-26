@@ -28,7 +28,9 @@ struct event
 		spectrum,			//Spectrum event type
 		imd_rdy,			//IMD signal event
 		clk_err,			//CLK error event
+		tx_end				//TX end goto rx
 	} evt;
+
 	struct imd_s
 	{
 		imd_s( int v, bool n)
@@ -51,6 +53,11 @@ struct event
 	event( type ev, int value )
 		: evt(ev), clkerr( value )
 	{}
+	//Construction version 3 no data
+	event( type ev )
+		: evt(ev), clkerr( 0 )
+	{
+	}
 };
 
 /* ------------------------------------------------------------------------- */
@@ -110,8 +117,11 @@ public:
 protected:
 	void callback_notify( short ch )
 	{
-		const event ev( event::type::tx_char, ch );
-		if( m_callback ) m_callback( ev );
+		if( m_callback )
+		{
+			const event ev( event::type::tx_char, ch );
+			m_callback( ev );
+		}
 	}
 private:
 	const handler_t m_callback;
@@ -151,6 +161,7 @@ class trx_device_base	//Add noncopyable
 	static const auto TX_SAMPLE_RATE = 32000;
 	static const auto RX_SAMPLE_RATE = 8000;
 public:
+	typedef std::function <void( const event &ev )> handler_t;
 	enum class mode		//Hardware device mode
 	{
 		off,		//TRX is disabled
@@ -163,7 +174,8 @@ public:
 	/* Constructor */
 	trx_device_base( event_handler_t evt_callback )
 		: m_evt_callback( evt_callback )
-	{}
+	{
+	}
 	/* Destructor */
 	~trx_device_base()
 	{
@@ -232,6 +244,14 @@ protected:
 	void set_mode_off()
 	{
 		m_mode = mode::off;
+	}
+	void callback_notify( event::type ev )
+	{
+		if( m_evt_callback )
+		{
+			const event _ev( ev );
+			m_evt_callback( _ev );
+		}
 	}
 private:
 	tx_codec* m_tx_codec { nullptr };			/* Transmit codec ptr */
