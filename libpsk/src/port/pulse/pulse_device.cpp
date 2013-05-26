@@ -18,20 +18,6 @@ namespace psk {
 /* ------------------------------------------------------------------------- */
 namespace
 {
-	/* Pulse receive config */
-	constexpr pa_sample_spec pulse_rx_config
-	{
-		PA_SAMPLE_S16LE,	//Format
-		8000,				//Rate
-		1					//Channels
-	};
-	/* Pulse receive config */
-	constexpr pa_sample_spec pulse_tx_config
-	{
-		PA_SAMPLE_S16LE,	//Format
-		8000,				//Rate
-		1					//Channels
-	};
 	const char C_pa_name[] = "PSK BoFF HAMLIB";
 }
 /* ------------------------------------------------------------------------- */
@@ -121,7 +107,7 @@ int pulse_device::receive_thread()
 	{
 	    return error;
 	}
-	adc_hardware_isr( &m_audio_buf[0], audio_buf_len );
+	adc_process( &m_audio_buf[0], audio_buf_len );
 	return error;
 }
 /* ------------------------------------------------------------------------- */
@@ -129,7 +115,7 @@ int pulse_device::receive_thread()
 int pulse_device::transmit_thread()
 {
 	int error = 0;
-	if ( !dac_hardware_isr( &m_audio_buf[0], audio_buf_len  ) )
+	if ( !dac_process( &m_audio_buf[0], audio_buf_len  ) )
 	{
 		if (pa_simple_write(m_pa_ctx,&m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
 			return error;
@@ -148,8 +134,15 @@ int pulse_device::transmit_thread()
 //Enable hardware receive
 int pulse_device::enable_hw_rx()
 {
+	/* Pulse receive config */
+	const pa_sample_spec pconfig
+	{
+		PA_SAMPLE_S16LE,		//Format
+		get_rx_sample_rate(),	//Rate
+		1						//Channels
+	};
 	int error = 0;
-	if (!(m_pa_ctx = pa_simple_new(nullptr, C_pa_name, PA_STREAM_RECORD, nullptr, "record", &pulse_tx_config, nullptr, nullptr, &error)))
+	if (!(m_pa_ctx = pa_simple_new(nullptr, C_pa_name, PA_STREAM_RECORD, nullptr, "record", &pconfig, nullptr, nullptr, &error)))
 	{
 		return error;
 	}
@@ -167,9 +160,16 @@ int pulse_device::disable_hw_rx()
 //Enable hardware trasmit
 int pulse_device::enable_hw_tx()
 {
+	/* Pulse receive config */
+	const pa_sample_spec pconfig
+	{
+		PA_SAMPLE_S16LE,		//Format
+		get_tx_sample_rate(),	//Transmit oversample for better Antialias filter
+		1						//Channels
+	};
 	int error = 0;
 	/* Create a new playback stream */
-	if (!(m_pa_ctx = pa_simple_new(nullptr, C_pa_name, PA_STREAM_PLAYBACK, nullptr, "playback", &pulse_rx_config, nullptr, nullptr, &error)))
+	if (!(m_pa_ctx = pa_simple_new(nullptr, C_pa_name, PA_STREAM_PLAYBACK, nullptr, "playback", &pconfig, nullptr, nullptr, &error)))
 	{
 	    return error;
 	}

@@ -574,10 +574,10 @@ void decoder_callback( const ham::psk::event &ev  )
 int main(int argc, const char * const *argv )
 {
 	namespace psk = ham::psk;
-	//FIX this API
-	psk::modulator * const mod = new psk::modulator(8000, 2124, 1024, decoder_callback);
-	psk::decoder * dec = new psk::decoder(8000, decoder_callback );
 	psk::pulse_device pulse( decoder_callback );
+	//FIX this API
+	psk::modulator * const mod = new psk::modulator( pulse.get_tx_sample_rate(), 2124, 1024, decoder_callback);
+	psk::decoder * dec = new psk::decoder(pulse.get_rx_sample_rate(), decoder_callback );
 	pulse.add_tx_codec( mod );
 	pulse.add_rx_codec( dec );
 	dec->set_mode( ham::psk::decoder::mode::qpsku, ham::psk::decoder::baudrate::b31 );

@@ -67,7 +67,7 @@ void trx_device_base::set_mode( trx_device_base::mode m )
 }
 /* ------------------------------------------------------------------------- */
 //ADC vector func
-void trx_device_base::adc_hardware_isr( const sample_type *buf, size_t len )
+void trx_device_base::adc_process( const sample_type *buf, size_t len )
 {
 	for( auto v : m_rx_codecs )
 	{
@@ -77,7 +77,7 @@ void trx_device_base::adc_hardware_isr( const sample_type *buf, size_t len )
 }
 /* ------------------------------------------------------------------------- */
 //DAC vector func return true if finished
-bool trx_device_base::dac_hardware_isr( sample_type *buf, size_t len )
+bool trx_device_base::dac_process( sample_type *buf, size_t len )
 {
 	if ( (*m_tx_codec)( buf, len ) )
 	{

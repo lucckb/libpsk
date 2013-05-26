@@ -64,7 +64,7 @@ private:
 	std::mutex m_thrmutex;							//Thread mutex
 	volatile bool m_thread_running {};				//Thread
 	volatile int  m_thread_status {};				//Thread error status
-	pa_simple *m_pa_ctx;							//PA CTX
+	pa_simple *m_pa_ctx {nullptr};					//PA CTX
 	static constexpr auto audio_buf_len = 1024;
 	std::array<short,audio_buf_len> m_audio_buf;
 };

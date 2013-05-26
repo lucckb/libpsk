@@ -147,6 +147,9 @@ class trx_device_base	//Add noncopyable
 	trx_device_base(const trx_device_base&) = delete;
 	trx_device_base& operator=(const trx_device_base&) = delete;
 	static constexpr auto MAX_CODECS = 4;
+	static constexpr auto FFT_UPDATE_TIME_MS = 250; //FFT update time in ms
+	static const auto TX_SAMPLE_RATE = 32000;
+	static const auto RX_SAMPLE_RATE = 8000;
 public:
 	enum class mode		//Hardware device mode
 	{
@@ -166,6 +169,14 @@ public:
 	{
 		destroy_tx_codec();
 		destroy_rx_codec();
+	}
+	unsigned get_tx_sample_rate() const
+	{
+		return TX_SAMPLE_RATE;
+	}
+	unsigned get_rx_sample_rate() const
+	{
+		return RX_SAMPLE_RATE;
 	}
 	/* Set RX or TX dev mode */
 	void set_mode( mode m );
@@ -209,9 +220,9 @@ private:
 	virtual int setup_sound_hardware( mode m ) = 0;
 protected:
 	//ADC vector func
-	void adc_hardware_isr( const sample_type *buf, size_t len );
+	void adc_process( const sample_type *buf, size_t len );
 	//DAC vector func
-	bool dac_hardware_isr( sample_type *buf, size_t len );
+	bool dac_process( sample_type *buf, size_t len );
 	//Set mode
 	void set_mode_off()
 	{
