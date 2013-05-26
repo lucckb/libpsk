@@ -76,18 +76,15 @@ void trx_device_base::adc_hardware_isr( const sample_type *buf, size_t len )
 	}
 }
 /* ------------------------------------------------------------------------- */
-//DAC vector func
-void trx_device_base::dac_hardware_isr( sample_type *buf, size_t len )
+//DAC vector func return true if finished
+bool trx_device_base::dac_hardware_isr( sample_type *buf, size_t len )
 {
-	if( m_mode == mode::transmit )
+	if ( (*m_tx_codec)( buf, len ) )
 	{
-		if ( (*m_tx_codec)( buf, len ) )
-		{
-			//Transmit termination request
-			setup_sound_hardware( mode::on );
-			m_mode = mode::on;
-		}
+		m_mode = mode::on;
+		return true;
 	}
+	return false;
 }
 /* ------------------------------------------------------------------------- */
 }}	//NS end

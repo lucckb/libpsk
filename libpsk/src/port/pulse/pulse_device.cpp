@@ -109,6 +109,7 @@ void pulse_device::hardware_sound_thread()
 		disable_hw_tx();
 	}
 	m_thread_status = errcode;
+	m_thread_running = false;
 }
 /* ------------------------------------------------------------------------- */
 //Receive and transmit thread
@@ -128,10 +129,18 @@ int pulse_device::receive_thread()
 int pulse_device::transmit_thread()
 {
 	int error = 0;
-	dac_hardware_isr( &m_audio_buf[0], audio_buf_len  );
-	if (pa_simple_write(m_pa_ctx,&m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
+	if ( !dac_hardware_isr( &m_audio_buf[0], audio_buf_len  ) )
 	{
-		return error;
+		if (pa_simple_write(m_pa_ctx,&m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
+			return error;
+	}
+	else
+	{
+		if( (error = disable_hw_tx()) )
+			return error;
+		if( (error = enable_hw_rx()) )
+			return error;
+
 	}
 	return error;
 }

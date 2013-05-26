@@ -37,10 +37,11 @@ public:
 	//Lock the device
 	virtual void lock( bool lock );
 	//Sleep for terminate audio thread
-	void join( )
+	int join( )
 	{
 		if( m_thread )
 			m_thread->join();
+		return m_thread_status;
 	}
 protected:
 	// Initialize sound hardware in selected mode

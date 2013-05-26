@@ -25,7 +25,7 @@ CFLAGS += -std=gnu99
 CXXFLAGS += $(COMMON_FLAGS) -std=c++11 -ftemplate-depth=2048
 
 #LDflags libraries etc.
-LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample -lpulse-simple
+LDFLAGS += -lavformat -lavcodec -lz -lavutil -lswresample -lpulse-simple -lpulse
 
 
 #Per file listing

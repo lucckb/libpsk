@@ -20,7 +20,9 @@ extern "C" {
 #include <libavutil/channel_layout.h>
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
+
 }
+#include <pulse/error.h>
 #include <unistd.h>
 
 namespace 
@@ -588,8 +590,7 @@ int main(int argc, const char * const *argv )
 
 	pulse.set_mode( psk::trx_device_base::mode::transmit );
 
-
-	pulse.join();
+	std::cout << "EXIT_STATUS " << ::pa_strerror(pulse.join()) << std::endl;
 }
 #endif
 

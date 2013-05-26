@@ -211,7 +211,7 @@ protected:
 	//ADC vector func
 	void adc_hardware_isr( const sample_type *buf, size_t len );
 	//DAC vector func
-	void dac_hardware_isr( sample_type *buf, size_t len );
+	bool dac_hardware_isr( sample_type *buf, size_t len );
 	//Set mode
 	void set_mode_off()
 	{
