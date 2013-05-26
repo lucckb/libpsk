@@ -213,6 +213,11 @@ public:
 	{
 		return m_tx_codec;
 	}
+	//Set FFT interval
+	void set_fft_interval( unsigned short timeout )
+	{
+		m_spectrum_timeout = timeout;
+	}
 	//Lock and unlock device
 	virtual void lock( bool lock ) = 0;
 private:
@@ -229,11 +234,13 @@ protected:
 		m_mode = mode::off;
 	}
 private:
-	tx_codec* m_tx_codec { nullptr };	/* Transmit codec ptr */
+	tx_codec* m_tx_codec { nullptr };			/* Transmit codec ptr */
 	std::array<rx_codec*, MAX_CODECS> m_rx_codecs {{}};	/* RX codecs array */
-	spectrum_calculator m_spectrum;		/* Spectrum calculator object */
-	const event_handler_t m_evt_callback;	/* Event handler object */
-	mode m_mode { mode::off };				/* Current device mode */
+	spectrum_calculator m_spectrum;				/* Spectrum calculator object */
+	unsigned m_spectrum_tmr {};					/* Spectrum time */
+	unsigned short m_spectrum_timeout { 250 };	/* Spectrum timeout */
+	const event_handler_t m_evt_callback;		/* Event handler object */
+	mode m_mode { mode::off };					/* Current device mode */
 };
 
 

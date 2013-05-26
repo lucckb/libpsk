@@ -42,11 +42,22 @@ public:
 	spectrum_calculator()
 	{}
 public:
-	//Copy sample buffer
-	void copy_samples( const pow_t* samples )
+	bool copy_samples( const pow_t* samples, size_t len )
 	{
-		std::memcpy( m_real, samples, sizeof(pow_t) * WIDTH );
+		size_t cpyn = WIDTH - m_sample_buf_cnt;
+		if( len < cpyn ) cpyn = len;
+		std::memcpy( &m_real[m_sample_buf_cnt], samples, sizeof(pow_t) * cpyn );
+		m_sample_buf_cnt += cpyn;
 		m_energy_calculated = false;
+		if( m_sample_buf_cnt >= WIDTH )
+		{
+			m_sample_buf_cnt = 0;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	//Get buffer samples and calculate it
 	const pow_t& operator[]( size_t idx )
@@ -104,6 +115,7 @@ private:
 	bool m_energy_calculated { false };		//Energy is calculated
 	scale m_scale { scale::log };			//Current scale
 	pow_t m_factor { std::numeric_limits<pow_t>::max() };
+	short m_sample_buf_cnt {};		//Sample buffer counter
 };
 
 /*----------------------------------------------------------*/

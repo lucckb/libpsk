@@ -7,7 +7,6 @@
 
 /* ------------------------------------------------------------------------- */
 #include "codec/trx_device_base.hpp"
-
 /* ------------------------------------------------------------------------- */
 //Namespace def
 namespace ham {
@@ -73,6 +72,14 @@ void trx_device_base::adc_process( const sample_type *buf, size_t len )
 	{
 		if( v != nullptr )
 			(*v)( buf, len );
+	}
+	//Calculate the tout sample
+	m_spectrum_tmr += (1000*len)/get_rx_sample_rate();
+	if( m_spectrum_tmr >= m_spectrum_timeout )
+	{
+		//True if all samples completed
+		if( m_spectrum.copy_samples( buf, len ) )
+			m_spectrum_tmr = 0;
 	}
 }
 /* ------------------------------------------------------------------------- */
