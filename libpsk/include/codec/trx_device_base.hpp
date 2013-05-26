@@ -245,6 +245,7 @@ protected:
 	{
 		m_mode = mode::off;
 	}
+	//Callback notify when extra params was ready
 	void callback_notify( event::type ev )
 	{
 		if( m_evt_callback )
