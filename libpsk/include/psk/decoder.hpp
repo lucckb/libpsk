@@ -114,15 +114,6 @@ public:
 	{
 		m_squelch.set_tresh( tresh, mode );
 	}
-	void get_imd( imd_value &val ) const
-	{
-		val.imd = m_calc_imd.get_value();
-		val.over_noise = m_calc_imd.is_over_noise();
-	}
-	int get_clkerr() const
-	{
-		return m_sync.get_clk_error();
-	}
 private:
 	int decode_symb( std::complex<int> newsamp );
 	bool is_qpsk() const

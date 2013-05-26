@@ -28,7 +28,7 @@ struct event
 		spectrum,			//Spectrum event type
 		imd_rdy,			//IMD signal event
 		clk_err,			//CLK error event
-		tx_end				//TX end goto rx
+		tx_end,				//TX end goto rx
 	} evt;
 
 	struct imd_s
