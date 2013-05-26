@@ -477,11 +477,12 @@ private:
 
 int encoder_main( const char *filename )
 {
+	namespace psk = ham::psk;
 	class audio_writer ww( filename );
 	ham::psk::modulator mod( ww.get_samplerate(),  2125, 1024, nullptr );
 	//mod.set_auto_shutoff( false );
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
-	mod.set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
+	mod.set_mode( psk::mod_psk_config(psk::mod_psk_config::mode::qpsku, psk::mod_psk_config::baud::b31));
 	for(size_t i=0;i<sizeof txt -1; i++)
 		mod.put_tx( txt[i] );
 	//mod.put_tx(ham::psk::ctrl_chars::TXTOG_CODE);
@@ -585,7 +586,7 @@ int main(int /*argc*/, const char * const */*argv*/ )
 	dec->set_frequency( 2125 );
 	dec->set_afc_limit( 100 ); //TMP
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
-	mod->set_mode( ham::psk::modulator::mode::qpsku, ham::psk::modulator::baudrate::b31);
+	mod->set_mode( psk::mod_psk_config(psk::mod_psk_config::mode::qpsku, psk::mod_psk_config::baud::b31));
 	for(size_t i=0;i<sizeof txt -1; i++)
 		mod->put_tx( txt[i] );
 

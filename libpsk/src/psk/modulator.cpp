@@ -147,7 +147,7 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len, tx
 	for(int i=0; i<16; i++)
 		m_iq_phase_array[i] = 1;
 	m_present_phase = PHZ_OFF;
-	set_mode( mode::bpsk, baudrate::b31 );
+	set_mode( mod_psk_config(mode::bpsk, baudrate::b31) );
 	set_freqency( tx_freq );
 }
 
@@ -159,15 +159,15 @@ void  modulator::set_freqency( int frequency )
 }
 /* ------------------------------------------------------------------------- */
 //Set mode
-void modulator::set_mode( mode mmode, baudrate baud )
+void modulator::set_mode( const mod_psk_config &cfg )
 {
-	m_mode = mmode;
+	m_mode = cfg.mmode;
 	m_ramp = 0;
-	if( baud == baudrate::b63 )
+	if( cfg.baudrate == baudrate::b63 )
 	{
 		m_symbol_rate = 6250;
 	}
-	else if( baud == baudrate::b125 )
+	else if( cfg.baudrate == baudrate::b125 )
 	{
 		m_symbol_rate = 12500;
 	}
@@ -175,7 +175,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 	{
 		m_symbol_rate = 3125;
 	}
-	switch( mmode )
+	switch( cfg.mmode )
 	{
 		case mode::bpsk:
 		case mode::qpskl:
@@ -190,8 +190,7 @@ void modulator::set_mode( mode mmode, baudrate baud )
 			break;
 	}
 	m_psk_period_update = (m_sample_freq*RATE_SCALE)/ m_symbol_rate;
-	//TODO: Fix this
-	m_encoder.set_mode( (_internal::symbol_encoder::mode)mmode );
+	m_encoder.set_mode( cfg.mmode );
 }
 
 /* ------------------------------------------------------------------------- */

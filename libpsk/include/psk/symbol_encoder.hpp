@@ -11,6 +11,7 @@
 /* ------------------------------------------------------------------------- */
 #include "psk/control_chars.hpp"
 #include "psk/varicode.hpp"
+#include "codec/psk_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -24,14 +25,8 @@ class symbol_encoder
 	//Make object noncopyable
 	symbol_encoder(const symbol_encoder&) = delete;
 	symbol_encoder& operator=(const symbol_encoder&) = delete;
+	typedef mod_psk_config::mode mode;
 public:
-	enum class mode
-	{
-		bpsk,
-		qpsku,
-		qpskl,
-		tune,
-	};
 	enum sym
 	{
 		SYM_NOCHANGE,	//Stay the same phase

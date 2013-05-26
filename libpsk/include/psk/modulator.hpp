@@ -17,6 +17,7 @@
 #include "dsp/nco_mixer.hpp"
 #include "codec/codec_types.hpp"
 #include "codec/trx_device_base.hpp"
+#include "codec/psk_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -28,15 +29,6 @@ class modulator : public tx_codec {
 	modulator(const modulator&) = delete;
 	modulator& operator=(const modulator&) = delete;
 public:
-	//Enum special chars
-	enum class mode
-	{
-		bpsk,
-		qpsku,
-		qpskl,
-		tune,
-	};
-
 	enum class state
 	{
 		off,				//Decoder is off
@@ -45,12 +37,6 @@ public:
 		preamble,			//Decoder sending preamble
 		postamble,			//Decoder sending postamble
 		tune				//Decoder in tune state
-	};
-	enum class baudrate
-	{
-		b31,				//Baudrate 31
-		b63,				//Baudrate 63
-		b125				//Baudrate 125
 	};
 	//Constructor
 	explicit modulator( int sample_freq, int tx_freq, std::size_t char_que_len, tx_codec::handler_t callback );
@@ -63,7 +49,7 @@ public:
 	//Set frequency
 	virtual void set_freqency( int frequency );
 	//Set mode
-	void set_mode( mode mmode, baudrate baud );
+	void set_mode( const mod_psk_config &cfg );
 	//Get number of chars remaining
 	virtual size_t get_count() const
 	{
@@ -100,6 +86,8 @@ private:
 	//Update state return char
 	int update_state_chr();
 private:
+	typedef mod_psk_config::mode mode;
+	typedef mod_psk_config::baud baudrate;
 	_internal::symbol_encoder m_encoder;
 	const int m_sample_freq;
 	mode m_mode { mode::bpsk };

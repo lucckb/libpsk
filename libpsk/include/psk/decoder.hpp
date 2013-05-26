@@ -77,7 +77,7 @@ public:
 	//Process input sample buffer
 	virtual void operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
-	const signal_vector_type& get_vector_data( ) const
+	const signal_vector_type& get_vector_data() const
 	{
 		return m_angle_calc.get_iq_phase_array();
 	}
