@@ -63,6 +63,14 @@ struct event
 };
 
 /* ------------------------------------------------------------------------- */
+
+//Vector data
+typedef std::array<int, 16> signal_vector_type;
+//Sync vector data
+typedef std::array<unsigned int, 16> sync_array_type;
+
+
+/* ------------------------------------------------------------------------- */
 /* Function event handler type
  * first parameter channel number
  * second channel type
@@ -89,6 +97,20 @@ public:
 	virtual sqelch_value_type get_signal_level() const = 0;
 	virtual void set_squelch( sqelch_value_type , squelch_mode ) = 0;
 	virtual int set_mode( const modulation_config_base &config ) = 0;
+	virtual bool get_vector_data( signal_vector_type& ) const
+	{
+		//Not handled
+		return true;
+	}
+	virtual bool set_afc_limit( int /*limit*/ )
+	{
+		//Not handled
+		return true;
+	}
+	virtual bool get_sync_data(sync_array_type& ) const
+	{
+		return true;
+	}
 protected:
 	void callback_notify( const event &ev )
 	{
@@ -116,6 +138,8 @@ public:
 	virtual size_t get_count() const = 0;
 	virtual void reset() = 0;
 	virtual int set_mode( const  modulation_config_base &config ) = 0;
+	//Check if device is in transmit state and can't switch to RX
+	virtual bool is_transmitting() const = 0;
 	/* Return true if need to switch back to RX */
 	virtual bool operator()( sample_type* sample, size_t len ) = 0;
 protected:

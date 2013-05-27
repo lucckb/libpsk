@@ -67,6 +67,12 @@ public:
 	{
 		return m_state;
 	}
+	//Check if device is in transmit state and can't switch to RX
+	virtual bool is_transmitting() const
+	{
+		return m_state!=state::off;
+	}
+	//Modulator is in off state no generate carrier freq
 	//TODO: Add reset support
 	virtual void reset()
 	{}

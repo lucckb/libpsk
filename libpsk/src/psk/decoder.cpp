@@ -393,9 +393,10 @@ void decoder::set_frequency( int freq )
 }
 /* ------------------------------------------------------------------------- */
 //Set AFC limit
-void decoder::set_afc_limit( int limit )
+bool decoder::set_afc_limit( int limit )
 {
 	m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
+	return false;
 }
 
 /* ------------------------------------------------------------------------- */

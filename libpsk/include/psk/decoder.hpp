@@ -34,19 +34,6 @@ namespace ham {
 namespace psk {
 
 /* ------------------------------------------------------------------------- */
-
-//Vector data
-typedef std::array<int, 16> signal_vector_type;
-//Sync vector data
-typedef std::array<unsigned int, 16> sync_array_type;
-
-/* Current imd VALUE */
-struct imd_value
-{
-	short imd;
-	bool over_noise;
-};
-/* ------------------------------------------------------------------------- */
 class decoder : public rx_codec {
 	//Make object noncopyable
 	decoder(const decoder&) = delete;
@@ -69,9 +56,10 @@ public:
 	//Process input sample buffer
 	virtual void operator()( const sample_type* samples, std::size_t sample_size );
 	//Get signal vector
-	const signal_vector_type& get_vector_data() const
+	virtual bool get_vector_data( signal_vector_type &vector ) const
 	{
-		return m_angle_calc.get_iq_phase_array();
+		vector = m_angle_calc.get_iq_phase_array();
+		return false;
 	}
 	//Reset decoder
 	virtual void reset();
@@ -82,7 +70,7 @@ public:
 	//Set detector mode
 	virtual int set_mode( const modulation_config_base& cfg );
 	//Set AFC limit
-	void set_afc_limit( int limit );
+	virtual bool set_afc_limit( int limit );
 	//Get current frequency
 	virtual int get_frequency() const
 	{
@@ -93,9 +81,10 @@ public:
 	{
 		return m_squelch.get_level();
 	}
-	const sync_array_type& get_sync_data() const
+	virtual bool get_sync_data(sync_array_type& sync_data) const
 	{
-		return m_sync.get_sync_data();
+		sync_data =  m_sync.get_sync_data();
+		return false;
 	}
 	//Set squelch tresh
 	virtual void set_squelch( sqelch_value_type tresh, squelch_mode mode )

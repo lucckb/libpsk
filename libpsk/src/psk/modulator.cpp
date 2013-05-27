@@ -286,6 +286,7 @@ int modulator::get_tx_char()
 	return ch;
 }
 /* ------------------------------------------------------------------------- */
+/* Get char to the modulator and update its state */
 int modulator::update_state_chr()
 {
 	int ch = 0;
@@ -297,7 +298,7 @@ int modulator::update_state_chr()
 			break;
 		case state::tune:
 			ch = ctrl_chars::TXON_CODE;				// steady carrier
-			if(	m_need_shutoff)
+			if(	m_need_shutoff )
 			{
 
 				m_state = state::off;
