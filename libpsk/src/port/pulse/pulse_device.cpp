@@ -20,15 +20,7 @@ namespace
 {
 	const char C_pa_name[] = "PSK BoFF HAMLIB";
 }
-/* ------------------------------------------------------------------------- */
-//Lock the device
-void pulse_device::lock( bool lock )
-{
-	if( lock )
-		m_thrmutex.lock();
-	else
-		m_thrmutex.unlock();
-}
+
 /* ------------------------------------------------------------------------- */
 // Initialize sound hardware in selected mode
 int pulse_device::setup_sound_hardware( trx_device_base::mode m )
@@ -189,7 +181,32 @@ int pulse_device::disable_hw_tx()
 	m_pa_ctx = nullptr;
 	return error;
 }
-
+/* ------------------------------------------------------------------------- */
+//Lock the device
+void pulse_device::lock( int id )
+{
+	if( id == trx_device_base::lock_object )
+		m_thrmutex.lock();
+	else if( id == trx_device_base::lock_spectrum )
+		m_sectrum_mutex.lock();
+}
+/* ------------------------------------------------------------------------- */
+void pulse_device::unlock( int id )
+{
+	if( id == trx_device_base::lock_object )
+		m_thrmutex.unlock();
+	else if( id == trx_device_base::lock_spectrum )
+		m_sectrum_mutex.unlock();
+}
+/* ------------------------------------------------------------------------- */
+bool pulse_device::try_lock( int id )
+{
+	if( id == trx_device_base::lock_object )
+		return m_thrmutex.try_lock();
+	else if( id == trx_device_base::lock_spectrum )
+		return m_sectrum_mutex.try_lock();
+	return false;
+}
 /* ------------------------------------------------------------------------- */
 } /* namespace psk */
 } /* namespace ham */

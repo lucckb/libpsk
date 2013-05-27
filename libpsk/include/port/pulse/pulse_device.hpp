@@ -15,6 +15,7 @@
 #include <mutex>
 #include <array>
 #include <pulse/simple.h>
+
 /* ------------------------------------------------------------------------- */
 
 namespace ham {
@@ -34,8 +35,6 @@ public:
 	{
 		if( m_pa_ctx ) pa_simple_free( m_pa_ctx );
 	}
-	//Lock the device
-	virtual void lock( bool lock );
 	//Sleep for terminate audio thread
 	int join( )
 	{
@@ -44,6 +43,10 @@ public:
 		return m_thread_status;
 	}
 protected:
+	//Lock the device
+	virtual void lock( int id );
+	virtual void unlock( int id );
+	virtual bool try_lock( int id );
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( trx_device_base::mode m );
 private:
@@ -62,6 +65,7 @@ private:
 	const char *m_dev_name;							//Device name
 	std::unique_ptr< std::thread > m_thread;		//TX thread
 	std::mutex m_thrmutex;							//Thread mutex
+	std::mutex m_sectrum_mutex;						//Spectrum mutex
 	volatile bool m_thread_running {};				//Thread
 	volatile int  m_thread_status {};				//Thread error status
 	pa_simple *m_pa_ctx {nullptr};					//PA CTX

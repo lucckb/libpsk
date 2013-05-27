@@ -11,6 +11,7 @@
 /* ------------------------------------------------------------------------- */
 #include <functional>
 #include <array>
+#include <memory>
 #include "psk/spectrum_calculator.hpp"
 #include "codec_types.hpp"
 #include "codec/trx_device_base.hpp"
@@ -69,7 +70,28 @@ typedef std::array<int, 16> signal_vector_type;
 //Sync vector data
 typedef std::array<unsigned int, 16> sync_array_type;
 
-
+namespace detail
+{
+	//Safe lock device engine
+	template <typename T>
+	class safe_lock
+	{
+		safe_lock(const safe_lock&) = delete;
+		safe_lock& operator=(const safe_lock&) = delete;
+	public:
+		safe_lock( T &obj)
+		  : m_obj(obj )
+		{
+			m_obj.lock();
+		}
+		~safe_lock( )
+		{
+			m_obj.unlock();
+		}
+	private:
+		T& m_obj;
+	};
+}
 
 /* ------------------------------------------------------------------------- */
 /* Receiver codec base class */
@@ -148,26 +170,6 @@ protected:
 private:
 	const handler_t m_callback;
 };
-/* ------------------------------------------------------------------------- */
-//Safe lock device engine
-template <typename T>
-class safe_lock
-{
-	safe_lock(const safe_lock&) = delete;
-	safe_lock& operator=(const safe_lock&) = delete;
-public:
-	safe_lock( T &obj )
-	  : m_obj(obj )
-	{
-		m_obj.lock( true );
-	}
-	~safe_lock( )
-	{
-		m_obj.lock( false );
-	}
-private:
-	T& m_obj;
-};
 
 /* ------------------------------------------------------------------------- */
 /* TRX base class hardware independent for managing the
@@ -182,6 +184,13 @@ class trx_device_base	//Add noncopyable
 	static constexpr auto FFT_UPDATE_TIME_MS = 250; //FFT update time in ms
 	static const auto TX_SAMPLE_RATE = 32000;
 	static const auto RX_SAMPLE_RATE = 8000;
+protected:
+	//Os specific locker
+	enum os_lock
+	{
+		lock_object,
+		lock_spectrum
+	};
 public:
 	typedef std::function <void( const event &ev )> handler_t;
 	enum class mode		//Hardware device mode
@@ -199,10 +208,8 @@ public:
 	{
 	}
 	/* Destructor */
-	~trx_device_base()
+	virtual ~trx_device_base()
 	{
-		destroy_tx_codec();
-		destroy_rx_codec();
 	}
 	unsigned get_tx_sample_rate() const
 	{
@@ -222,38 +229,52 @@ public:
 	//Register RX codec
 	int add_rx_codec( rx_codec* codec );
 	// Destroy RX codec and remove from pool
-	bool destroy_rx_codec( int idx = ALL );
+	bool remove_rx_codec( int idx = ALL );
+	// Remove tx codec
+	bool remove_tx_codec()
+	{
+		m_tx_codec.reset();
+		return false;
+	}
 	// Add codec to the poll
 	bool add_tx_codec( tx_codec *c)
 	{
-		m_tx_codec = c;
+		m_tx_codec.reset( c );
 		return false;
 	}
-	//Destroy TX codec and remove from pool
-	void destroy_tx_codec()
-	{
-		delete m_tx_codec;
-		m_tx_codec = nullptr;
-	}
 	//Spectrum calculator object
-	const spectrum_calculator& get_spectrum() const;
+	spectrum_calculator const& aquire_spectrum()
+	{
+		return m_spectrum;
+	}
+	void release_spectrum()
+	{
+
+	}
 	// Get RX object by IDX
 	rx_codec* get_rx_codec( int idx )
 	{
-		return idx<MAX_CODECS?m_rx_codecs[idx]:nullptr;
+		return idx<MAX_CODECS?m_rx_codecs[idx].get():nullptr;
 	}
 	// Get TX object
 	tx_codec* get_tx_codec()
 	{
-		return m_tx_codec;
+		return m_tx_codec.get();
 	}
 	//Set FFT interval
 	void set_fft_interval( unsigned short timeout )
 	{
 		m_spectrum_timeout = timeout;
 	}
+	void lock()   { lock( lock_object );   }
+	void unlock() { unlock( lock_object ); }
+protected:
 	//Lock and unlock device
-	virtual void lock( bool lock ) = 0;
+	virtual void lock( int id ) = 0;
+	//Lock and unlock device
+	virtual void unlock( int id ) = 0;
+	//Try lock the device
+	virtual bool try_lock( int id ) = 0;
 private:
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( mode m ) = 0;
@@ -277,8 +298,8 @@ protected:
 		}
 	}
 private:
-	tx_codec* m_tx_codec { nullptr };			/* Transmit codec ptr */
-	std::array<rx_codec*, MAX_CODECS> m_rx_codecs {{}};	/* RX codecs array */
+	std::unique_ptr<tx_codec> m_tx_codec;		/* TX codec */
+	std::array<std::unique_ptr<rx_codec>, MAX_CODECS> m_rx_codecs;	/* RX codecs array */
 	spectrum_calculator m_spectrum;				/* Spectrum calculator object */
 	unsigned m_spectrum_tmr {};					/* Spectrum time */
 	unsigned short m_spectrum_timeout { 250 };	/* Spectrum timeout */

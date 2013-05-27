@@ -24,6 +24,7 @@ extern "C" {
 }
 #include <pulse/error.h>
 #include <unistd.h>
+#include <ham/ham_digi.hpp>
 
 namespace 
 {
