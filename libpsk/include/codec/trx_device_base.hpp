@@ -70,12 +70,6 @@ typedef std::array<int, 16> signal_vector_type;
 typedef std::array<unsigned int, 16> sync_array_type;
 
 
-/* ------------------------------------------------------------------------- */
-/* Function event handler type
- * first parameter channel number
- * second channel type
- */
-typedef std::function <void( const event &ev )> event_handler_t;
 
 /* ------------------------------------------------------------------------- */
 /* Receiver codec base class */
@@ -200,7 +194,7 @@ public:
 	static constexpr auto INVALID = -1;
 	static constexpr auto ALL = -1;
 	/* Constructor */
-	trx_device_base( event_handler_t evt_callback )
+	trx_device_base( handler_t evt_callback )
 		: m_evt_callback( evt_callback )
 	{
 	}
@@ -288,7 +282,7 @@ private:
 	spectrum_calculator m_spectrum;				/* Spectrum calculator object */
 	unsigned m_spectrum_tmr {};					/* Spectrum time */
 	unsigned short m_spectrum_timeout { 250 };	/* Spectrum timeout */
-	const event_handler_t m_evt_callback;		/* Event handler object */
+	const handler_t m_evt_callback;		/* Event handler object */
 	mode m_mode { mode::off };					/* Current device mode */
 };
 

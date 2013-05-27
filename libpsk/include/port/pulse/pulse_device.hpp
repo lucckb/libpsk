@@ -26,7 +26,7 @@ class pulse_device: public trx_device_base
 {
 public:
 	//Constructor
-	pulse_device( event_handler_t evt_callback, const char *name = nullptr )
+	pulse_device( handler_t evt_callback, const char *name = nullptr )
 		:  trx_device_base(evt_callback), m_dev_name( name )
 	{
 	}
