@@ -86,7 +86,7 @@ int main()
 
 	ham::psk::spectrum_calculator spc;
 	spc.set_scale( 	ham::psk::spectrum_calculator::scale::log );
-	spc.copy_samples( y );
+	spc.copy_samples( y, N_SAMPL );
 	plot( t, &spc[0], N_SAMPL/2, "FINAL");
 	for(int i=0; i<N_SAMPL/2; i++)
 		std::cout << spc[i] << std::endl;
