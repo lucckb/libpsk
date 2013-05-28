@@ -243,13 +243,14 @@ public:
 		return false;
 	}
 	//Spectrum calculator object
-	spectrum_calculator const& aquire_spectrum()
+	spectrum_calculator const& get_lock_spectrum()
 	{
+		lock( lock_spectrum );
 		return m_spectrum;
 	}
-	void release_spectrum()
+	void unlock_spectrum()
 	{
-
+		unlock( lock_spectrum );
 	}
 	// Get RX object by IDX
 	rx_codec* get_rx_codec( int idx )

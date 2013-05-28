@@ -36,7 +36,7 @@ DEBUG ?=  y
 
 #Source C++ files
 CPPSRC += $(wildcard *.cpp) $(wildcard libpsk/src/psk/*.cpp) $(wildcard libpsk/src/codec/*.cpp)
-CPPSRC += $(wildcard libpsk/src/port/pulse/*.cpp)
+CPPSRC += $(wildcard libpsk/src/port/pulse/*.cpp) $(wildcard libpsk/src/port/ham/*.cpp)
 include unix.mk
 
 
