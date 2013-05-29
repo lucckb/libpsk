@@ -266,7 +266,7 @@ public:
 	//Lock and unlock device
 	virtual void unlock( int id = lock_object ) = 0;
 	//Try lock the device
-	virtual bool try_lock( int id = lock_object) = 0;
+	virtual bool try_lock( int id = lock_object ) = 0;
 private:
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( mode m ) = 0;
