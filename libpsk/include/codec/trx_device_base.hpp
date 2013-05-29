@@ -184,14 +184,13 @@ class trx_device_base	//Add noncopyable
 	static constexpr auto FFT_UPDATE_TIME_MS = 250; //FFT update time in ms
 	static const auto TX_SAMPLE_RATE = 32000;
 	static const auto RX_SAMPLE_RATE = 8000;
-protected:
+public:
 	//Os specific locker
-	enum os_lock
+	enum lock_type
 	{
 		lock_object,
 		lock_spectrum
 	};
-public:
 	typedef std::function <void( const event &ev )> handler_t;
 	enum class mode		//Hardware device mode
 	{
@@ -243,14 +242,9 @@ public:
 		return false;
 	}
 	//Spectrum calculator object
-	spectrum_calculator const& get_lock_spectrum()
+	spectrum_calculator& get_spectrum()
 	{
-		lock( lock_spectrum );
 		return m_spectrum;
-	}
-	void unlock_spectrum()
-	{
-		unlock( lock_spectrum );
 	}
 	// Get RX object by IDX
 	rx_codec* get_rx_codec( int idx )
@@ -267,15 +261,12 @@ public:
 	{
 		m_spectrum_timeout = timeout;
 	}
-	void lock()   { lock( lock_object );   }
-	void unlock() { unlock( lock_object ); }
-protected:
 	//Lock and unlock device
-	virtual void lock( int id ) = 0;
+	virtual void lock( int id = lock_object ) = 0;
 	//Lock and unlock device
-	virtual void unlock( int id ) = 0;
+	virtual void unlock( int id = lock_object ) = 0;
 	//Try lock the device
-	virtual bool try_lock( int id ) = 0;
+	virtual bool try_lock( int id = lock_object) = 0;
 private:
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( mode m ) = 0;

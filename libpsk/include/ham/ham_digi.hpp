@@ -44,17 +44,17 @@ public:
 	int rx_channel_add();						/* Extra channel ADD */
 	int rx_channel_remove( int chn_id );		/* Extra channel remove */
 private:
-	class tx_access
+	class tx_proxy
 	{
-		tx_access(const tx_access&) = delete;
-		tx_access& operator=(const tx_access&) = delete;
+		tx_proxy(const tx_proxy&) = delete;
+		tx_proxy& operator=(const tx_proxy&) = delete;
 	public:
-		tx_access( trx_device_base *obj )
+		tx_proxy( trx_device_base *obj )
 		: m_obj(obj)
 		{
 			if( m_obj ) m_obj->lock();
 		}
-		~tx_access()
+		~tx_proxy()
 		{
 			if( m_obj ) m_obj->unlock();
 		}
@@ -65,17 +65,17 @@ private:
 	private:
 		trx_device_base* const m_obj;
 	};
-	class rx_access
+	class rx_proxy
 	{
-		rx_access(const rx_access&) = delete;
-		rx_access& operator=(const rx_access&) = delete;
+		rx_proxy(const rx_proxy&) = delete;
+		rx_proxy& operator=(const rx_proxy&) = delete;
 	public:
-		rx_access( trx_device_base *obj, int id )
+		rx_proxy( trx_device_base *obj, int id )
 			: m_obj(obj), m_id(id)
 		{
 			if( m_obj ) m_obj->lock();
 		}
-		~rx_access()
+		~rx_proxy()
 		{
 			if( m_obj ) m_obj->unlock();
 		}
@@ -87,11 +87,33 @@ private:
 		trx_device_base* const m_obj;
 		const int m_id;
 	};
+	class spectrum_proxy
+	{
+		spectrum_proxy(const spectrum_proxy&) = delete;
+		spectrum_proxy& operator=(const spectrum_proxy&) = delete;
+	public:
+		spectrum_proxy( trx_device_base *obj)
+			: m_obj(obj)
+		{
+			if( m_obj ) m_obj->lock(trx_device_base::lock_spectrum);
+		}
+		~spectrum_proxy()
+		{
+			if( m_obj ) m_obj->unlock(trx_device_base::lock_spectrum);
+		}
+		spectrum_calculator& get()
+		{
+			return m_obj->get_spectrum();
+		}
+	private:
+		trx_device_base * const m_obj;
+	};
+
 public:
 	//Get locked TX
-	tx_access tx();
+	tx_proxy tx();
 	//Locked access RX
-	rx_access rx(int id=0);
+	rx_proxy rx(int id=0);
 
 	spectrum_calculator const& get_lock_spectrum();
 	void unlock_spectrum();
