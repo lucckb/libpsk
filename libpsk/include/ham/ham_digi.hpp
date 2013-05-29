@@ -95,11 +95,11 @@ private:
 		spectrum_proxy( trx_device_base *obj)
 			: m_obj(obj)
 		{
-			if( m_obj ) m_obj->lock(trx_device_base::lock_spectrum);
+			if( m_obj ) m_obj->lock( trx_device_base::lock_spectrum );
 		}
 		~spectrum_proxy()
 		{
-			if( m_obj ) m_obj->unlock(trx_device_base::lock_spectrum);
+			if( m_obj ) m_obj->unlock( trx_device_base::lock_spectrum );
 		}
 		spectrum_calculator& get()
 		{
