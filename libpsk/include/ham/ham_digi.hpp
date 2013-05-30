@@ -20,26 +20,41 @@ class ham_digi
 {
 	ham_digi(const ham_digi&) = delete;
 	ham_digi& operator=(const ham_digi&) = delete;
+	static constexpr auto TX_QUELEN = 512;
+	static constexpr auto DEF_FREQ = 1000;
+	static constexpr auto SYS_CALLBACK_ID = -1;
 public:
 	/* Modulation structure */
 	enum class modulation : short
 	{
+		notset,
 		psk			//PSK modulaton
 	};
+	/* Error codes API */
+	enum err
+	{
+		err_ok,					//No error
+		err_no_modulation,		//Modulation no set
+		err_tx_busy,			//Device is transmit busy
+		err_invalid_request,	//Invalid request
+		err_remove_codec,		//Remove codec invalid request
+		err_nofree_slots,		//No free slots
+		err_invalid_slot		//Invalid slot
+	};
+
 	/* Function event handler type
 	 * first parameter channel number
 	 * second channel type
 	 */
 	typedef std::function <void( int chn, const event &ev )> handler_t;
 	/* Constructor with handler */
-	ham_digi( handler_t handler );
+	ham_digi( handler_t handler, trx_device_base *hw_device );
 	/* Activate transmission */
 	int enable( bool en );
 	/* Switch to TX RX */
 	int set_tx( bool tx );
-
 	/* Set current modulation currenty PSK only is supported */
-	int set_modulation( modulator mod );
+	int set_modulation( modulation mod );
 	/* New RX channel */
 	int rx_channel_add();						/* Extra channel ADD */
 	int rx_channel_remove( int chn_id );		/* Extra channel remove */
@@ -111,15 +126,15 @@ private:
 
 public:
 	//Get locked TX
-	tx_proxy tx();
+	tx_proxy&& tx();
 	//Locked access RX
-	rx_proxy rx(int id=0);
-
-	spectrum_calculator const& get_lock_spectrum();
-	void unlock_spectrum();
+	rx_proxy&& rx( int id = 0 );
+	//Get spectrum
+	spectrum_proxy&& get_spectrum();
 private:
-	std::unique_ptr<trx_device_base> m_iodev;	//IO device
-	handler_t m_callback;
+	const std::unique_ptr<trx_device_base> m_iodev;	//IO device
+	const handler_t m_callback;						//Callback function
+	modulation m_modulation {};				//Current modulation
 };
 
 /* ------------------------------------------------------------------------- */

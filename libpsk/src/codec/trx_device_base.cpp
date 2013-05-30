@@ -43,19 +43,24 @@ bool trx_device_base::remove_rx_codec( int idx )
 }
 /* ------------------------------------------------------------------------- */
 //Register RX codec
-int trx_device_base::add_rx_codec( rx_codec * codec )
+void trx_device_base::add_rx_codec( rx_codec * codec, int slot )
 {
-	for( auto idx = 0; idx<MAX_CODECS; idx++ )
+	if( m_rx_codecs[slot] == nullptr )
+	{
+		m_rx_codecs[slot].reset( codec );
+	}
+}
+/* ------------------------------------------------------------------------- */
+//Get first free rx slot
+int trx_device_base::get_rx_slot() const
+{
+	for( auto idx = 0; idx<MAX_CODECS; ++idx )
 	{
 		if( m_rx_codecs[idx] == nullptr )
-		{
-			m_rx_codecs[idx].reset( codec );
 			return idx;
-		}
 	}
 	return INVALID;
 }
-
 /* ------------------------------------------------------------------------- */
 /* Set RX or TX dev mode */
 void trx_device_base::set_mode( trx_device_base::mode m )

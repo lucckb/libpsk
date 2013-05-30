@@ -36,7 +36,7 @@ public:
 		if( m_pa_ctx ) pa_simple_free( m_pa_ctx );
 	}
 	//Sleep for terminate audio thread
-	int join( )
+	virtual int join( )
 	{
 		if( m_thread )
 			m_thread->join();

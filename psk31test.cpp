@@ -583,7 +583,7 @@ int main(int /*argc*/, const char * const */*argv*/ )
 	psk::modulator * const mod = new psk::modulator( pulse.get_tx_sample_rate(), 2124, 1024, decoder_callback);
 	psk::decoder * dec = new psk::decoder(pulse.get_rx_sample_rate(), decoder_callback );
 	pulse.add_tx_codec( mod );
-	pulse.add_rx_codec( dec );
+	pulse.add_rx_codec( dec , 0 );
 	dec->set_mode( psk::mod_psk_config( psk::mod_psk_config::mode::qpsku,  psk::mod_psk_config::baud::b31 ) );
 	dec->set_frequency( 2125 );
 	dec->set_afc_limit( 100 ); //TMP

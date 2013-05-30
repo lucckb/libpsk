@@ -226,7 +226,9 @@ public:
 		return m_mode;
 	}
 	//Register RX codec
-	int add_rx_codec( rx_codec* codec );
+	void add_rx_codec( rx_codec* codec, int slot );
+	//Get first RX slot
+	int get_rx_slot() const;
 	// Destroy RX codec and remove from pool
 	bool remove_rx_codec( int idx = ALL );
 	// Remove tx codec
@@ -236,7 +238,7 @@ public:
 		return false;
 	}
 	// Add codec to the poll
-	bool add_tx_codec( tx_codec *c)
+	bool add_tx_codec( tx_codec *c )
 	{
 		m_tx_codec.reset( c );
 		return false;
@@ -267,6 +269,8 @@ public:
 	virtual void unlock( int id = lock_object ) = 0;
 	//Try lock the device
 	virtual bool try_lock( int id = lock_object ) = 0;
+	//Sleep for terminate audio thread
+	virtual int join( ) = 0;
 private:
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( mode m ) = 0;
