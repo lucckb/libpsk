@@ -28,6 +28,7 @@ int pulse_device::setup_sound_hardware( trx_device_base::mode m )
 	//Hardware  SETUP state
 	if( m == trx_device_base::mode::on && get_mode()!=trx_device_base::mode::on )
 	{
+
 		if( get_mode()==trx_device_base::mode::transmit )
 		{
 			const int ret = disable_hw_tx();
@@ -60,7 +61,7 @@ int pulse_device::setup_sound_hardware( trx_device_base::mode m )
 		m_thread.reset( new std::thread( &pulse_device::hardware_sound_thread, this ) );
 		return 0;
 	}
-	return trx_device_base::INVALID;
+	return 0;
 }
 /* ------------------------------------------------------------------------- */
 //Hardware sound thread func
@@ -69,10 +70,9 @@ void pulse_device::hardware_sound_thread()
 	int errcode = 0;
 	for(; m_thread_running && !errcode ;)
 	{
-		m_thrmutex.lock();
+
 		if     ( get_mode()==trx_device_base::mode::on ) 	   errcode = receive_thread();
 		else if( get_mode()==trx_device_base::mode::transmit ) errcode = transmit_thread();
-		m_thrmutex.unlock();
 	}
 	if( get_mode()==trx_device_base::mode::on )
 	{
@@ -94,12 +94,18 @@ void pulse_device::hardware_sound_thread()
 int pulse_device::receive_thread()
 {
 	int error = 0;
-	/* Record some data ... */
-	if (pa_simple_read(m_pa_ctx, &m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
 	{
-	    return error;
+		std::lock_guard<std::mutex> lock( m_pulse_mutex );
+		/* Record some data ... */
+		if (pa_simple_read(m_pa_ctx, &m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
+		{
+			return error;
+		}
 	}
-	adc_process( &m_audio_buf[0], audio_buf_len );
+	{
+		std::lock_guard<std::mutex> lock( m_codec_mutex );
+		adc_process( &m_audio_buf[0], audio_buf_len );
+	}
 	return error;
 }
 /* ------------------------------------------------------------------------- */
@@ -107,10 +113,18 @@ int pulse_device::receive_thread()
 int pulse_device::transmit_thread()
 {
 	int error = 0;
-	if ( !dac_process( &m_audio_buf[0], audio_buf_len  ) )
+	bool status;
 	{
+		std::lock_guard<std::mutex> lock( m_codec_mutex );
+		status = dac_process( &m_audio_buf[0], audio_buf_len );
+	}
+	if( !status )
+	{
+		std::lock_guard<std::mutex> lock( m_pulse_mutex );
 		if (pa_simple_write(m_pa_ctx,&m_audio_buf[0], audio_buf_len*sizeof(short), &error) < 0)
+		{
 			return error;
+		}
 	}
 	else
 	{
@@ -118,7 +132,6 @@ int pulse_device::transmit_thread()
 			return error;
 		if( (error = enable_hw_rx()) )
 			return error;
-
 	}
 	return error;
 }
@@ -126,6 +139,7 @@ int pulse_device::transmit_thread()
 //Enable hardware receive
 int pulse_device::enable_hw_rx()
 {
+	std::lock_guard<std::mutex> lock( m_pulse_mutex );
 	/* Pulse receive config */
 	const pa_sample_spec pconfig
 	{
@@ -144,6 +158,7 @@ int pulse_device::enable_hw_rx()
 //Disable hardware receive
 int pulse_device::disable_hw_rx()
 {
+	std::lock_guard<std::mutex> lock( m_pulse_mutex );
 	pa_simple_free(m_pa_ctx);
 	m_pa_ctx = nullptr;
 	return 0;
@@ -152,6 +167,7 @@ int pulse_device::disable_hw_rx()
 //Enable hardware trasmit
 int pulse_device::enable_hw_tx()
 {
+	std::lock_guard<std::mutex> lock( m_pulse_mutex );
 	/* Pulse receive config */
 	const pa_sample_spec pconfig
 	{
@@ -171,6 +187,7 @@ int pulse_device::enable_hw_tx()
 //Disable hardware tramsmit
 int pulse_device::disable_hw_tx()
 {
+	std::lock_guard<std::mutex> lock( m_pulse_mutex );
 	int error = 0;
 	/* Make sure that every single sample was played */
 	if (pa_simple_drain(m_pa_ctx, &error) < 0)
@@ -186,7 +203,7 @@ int pulse_device::disable_hw_tx()
 void pulse_device::lock( int id )
 {
 	if( id == trx_device_base::lock_object )
-		m_thrmutex.lock();
+		m_codec_mutex.lock();
 	else if( id == trx_device_base::lock_spectrum )
 		m_sectrum_mutex.lock();
 }
@@ -194,7 +211,7 @@ void pulse_device::lock( int id )
 void pulse_device::unlock( int id )
 {
 	if( id == trx_device_base::lock_object )
-		m_thrmutex.unlock();
+		m_codec_mutex.unlock();
 	else if( id == trx_device_base::lock_spectrum )
 		m_sectrum_mutex.unlock();
 }
@@ -202,7 +219,7 @@ void pulse_device::unlock( int id )
 bool pulse_device::try_lock( int id )
 {
 	if( id == trx_device_base::lock_object )
-		return m_thrmutex.try_lock();
+		return m_codec_mutex.try_lock();
 	else if( id == trx_device_base::lock_spectrum )
 		return m_sectrum_mutex.try_lock();
 	return false;

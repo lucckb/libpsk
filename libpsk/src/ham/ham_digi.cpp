@@ -6,7 +6,11 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "ham/ham_digi.hpp"
+#ifndef COMPILED_UNDER_ISIX
 #include "port/pulse/pulse_device.hpp"
+#else
+#error not implemented yet
+#endif
 #include "psk/decoder.hpp"
 #include "psk/modulator.hpp"
 #include <functional>
@@ -14,11 +18,23 @@
 
 namespace ham {
 namespace psk {
-
+/* ------------------------------------------------------------------------- */
+namespace
+{
+#ifndef COMPILED_UNDER_ISIX
+	inline trx_device_base* create_default_device( ham_digi::handler_t h )
+	{
+		static const int sys_idx = ham_digi::SYS_CALLBACK_ID;
+		return new pulse_device( std::bind(h, sys_idx, std::placeholders::_1) );
+	}
+#else
+#endif
+}
 /* ------------------------------------------------------------------------- */
 //Default ham digi constructor
-ham_digi::ham_digi( handler_t handler, trx_device_base *hw_device )
-	: m_iodev( hw_device ), m_callback( handler )
+ham_digi::ham_digi( handler_t handler )
+	:  m_iodev( create_default_device( handler ) )
+	,  m_callback( handler )
 {
 }
 /* ------------------------------------------------------------------------- */
@@ -47,16 +63,15 @@ int ham_digi::set_tx( bool tx )
 	{
 		return err_no_modulation;
 	}
+	/* Not working yet */
+	//if( m_iodev->get_tx_codec()->is_transmitting()  )
+	//{
+	//	return err_tx_busy;
+	//}
 	if( tx && m_iodev->get_mode()==trx_device_base::mode::on )
 	{
-		if( m_iodev->get_tx_codec()->is_transmitting()  )
-		{
-			return err_tx_busy;
-		}
-		else
-		{
-			m_iodev->set_mode( trx_device_base::mode::transmit );
-		}
+
+		m_iodev->set_mode( trx_device_base::mode::transmit );
 	}
 	else
 	{

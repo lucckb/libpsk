@@ -508,7 +508,7 @@ int encoder_main( const char *filename )
 
 /* *************************** MAIN LOOP ********************************** */
 
-#if 0	/* Disabled for real pulse testing */
+#if 0		/* Disabled for real pulse testing */
 int main(int argc, const char * const *argv )
 {
 	 if(argc < 2)
@@ -547,10 +547,11 @@ int main(int argc, const char * const *argv )
 
 
 
-void decoder_callback( const ham::psk::event &ev  )
+void decoder_callback( int idx, const ham::psk::event &ev  )
 {
 	using namespace ham::psk;
 	using namespace std;
+	cout << idx << " ";
 	switch( ev.evt )
 	{
 	case event::type::rx_char:
@@ -568,13 +569,16 @@ void decoder_callback( const ham::psk::event &ev  )
 	case event::type::tx_end:
 		cout << "TRANSMIT FINISHED" << endl;
 		break;
+	case event::type::spectrum:
+		cout << "SPECTRUM AVAIL " << endl;
+		break;
 	default:
-		cout << "Unknown evt" << endl;
+		cout << "Unknown evt " << int( ev.evt ) << endl;
 	}
 }
 
 
-#if 1
+#if 0
 int main(int /*argc*/, const char * const */*argv*/ )
 {
 	namespace psk = ham::psk;
@@ -595,6 +599,28 @@ int main(int /*argc*/, const char * const */*argv*/ )
 	pulse.set_mode( psk::trx_device_base::mode::transmit );
 
 	std::cout << "EXIT_STATUS " << ::pa_strerror(pulse.join()) << std::endl;
+}
+#endif
+
+#if 1
+int main(int /*argc*/, const char * const */*argv*/ )
+{
+	namespace psk = ham::psk;
+	psk::ham_digi ham_digi( decoder_callback );
+	std:: cout << ham_digi.set_modulation(  psk::ham_digi::modulation::psk ) << std::endl;
+	ham_digi.rx()->set_frequency( 2125 );
+	ham_digi.rx()->set_afc_limit( 100 );
+	ham_digi.rx()->set_mode( psk::mod_psk_config(psk::mod_psk_config::mode::qpsku, psk::mod_psk_config::baud::b31) );
+	ham_digi.tx()->set_mode( psk::mod_psk_config(psk::mod_psk_config::mode::qpsku, psk::mod_psk_config::baud::b31));
+	ham_digi.tx()->set_freqency( 2125 );
+	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
+	for(size_t i=0;i<sizeof txt -1; i++)
+		ham_digi.tx()->put_tx( txt[i] );
+	std::cout << ham_digi.enable( true ) << std::endl;
+	::sleep(2);
+	std::cout << "TRANSMIT " << std::endl;
+	std::cout <<  ham_digi.set_tx(  true  ) << std::endl;
+	std::cout << ham_digi.join() << std::endl;
 }
 #endif
 

@@ -22,8 +22,8 @@ class ham_digi
 	ham_digi& operator=(const ham_digi&) = delete;
 	static constexpr auto TX_QUELEN = 512;
 	static constexpr auto DEF_FREQ = 1000;
-	static constexpr auto SYS_CALLBACK_ID = -1;
 public:
+	static constexpr auto SYS_CALLBACK_ID = -1;
 	/* Modulation structure */
 	enum class modulation : short
 	{
@@ -48,7 +48,7 @@ public:
 	 */
 	typedef std::function <void( int chn, const event &ev )> handler_t;
 	/* Constructor with handler */
-	ham_digi( handler_t handler, trx_device_base *hw_device );
+	ham_digi( handler_t handler );
 	/* Activate transmission */
 	int enable( bool en );
 	/* Switch to TX RX */
@@ -58,6 +58,11 @@ public:
 	/* New RX channel */
 	int rx_channel_add();						/* Extra channel ADD */
 	int rx_channel_remove( int chn_id );		/* Extra channel remove */
+	/* Wait to finish */
+	int join()
+	{
+		return m_iodev->join();
+	}
 private:
 	class tx_proxy
 	{

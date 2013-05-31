@@ -64,8 +64,9 @@ private:
 private:
 	const char *m_dev_name;							//Device name
 	std::unique_ptr< std::thread > m_thread;		//TX thread
-	std::mutex m_thrmutex;							//Thread mutex
+	std::mutex m_codec_mutex;						//Thread mutex
 	std::mutex m_sectrum_mutex;						//Spectrum mutex
+	std::mutex m_pulse_mutex;
 	volatile bool m_thread_running {};				//Thread
 	volatile int  m_thread_status {};				//Thread error status
 	pa_simple *m_pa_ctx {nullptr};					//PA CTX
