@@ -34,7 +34,7 @@ LISTING = n
 DEBUG ?=  n
 
 #LIBRARY
-LIBRARY = y
+LIBRARY = y	
 
 #Source C++ files
 CPPSRC += $(wildcard ../libpsk/src/psk/*.cpp) $(wildcard ../libpsk/src/codec/*.cpp)
