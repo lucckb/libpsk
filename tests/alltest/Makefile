@@ -9,7 +9,7 @@ OPT ?= 2
 
 
 #Common flags 
-COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. -I./libpsk/include
+COMMON_FLAGS = -pipe -Wall -pedantic -Wextra -Wno-vla -I. -I../../libpsk/include
 #COMMON_FLAGS += -D__STDC_CONSTANT_MACROS 
 #Code profiler
 #COMMON_FLAGS += -pg
@@ -35,8 +35,8 @@ LISTING = n
 DEBUG ?=  y
 
 #Source C++ files
-CPPSRC += $(wildcard *.cpp) $(wildcard libpsk/src/psk/*.cpp) $(wildcard libpsk/src/codec/*.cpp)
-CPPSRC += $(wildcard libpsk/src/port/pulse/*.cpp) $(wildcard libpsk/src/ham/*.cpp)
-include unix.mk
+CPPSRC += $(wildcard *.cpp) $(wildcard ../../libpsk/src/psk/*.cpp) $(wildcard ../../libpsk/src/codec/*.cpp)
+CPPSRC += $(wildcard ../../libpsk/src/port/pulse/*.cpp) $(wildcard ../../libpsk/src/ham/*.cpp)
+include ../../unix.mk
 
 
