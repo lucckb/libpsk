@@ -109,7 +109,7 @@ private:
 	//Change this to array
 	std::array<int, 16> m_iq_phase_array {{}};
 	state m_state;
-	bool m_need_shutoff { true };
+	bool m_need_shutoff { false };
 	int m_amble_ptr {};
 	bool m_no_squelch_tail {};
 	fnd::dyn_queue<short> m_chqueue;

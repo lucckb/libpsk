@@ -616,6 +616,7 @@ int main(int /*argc*/, const char * const */*argv*/ )
 	const char txt[] = "Ala ma kota a KOT ma ale teraz bedzie nieco dluzszy tekst a im tekst dluzszy tym lepszy";
 	for(size_t i=0;i<sizeof txt -1; i++)
 		ham_digi.tx()->put_tx( txt[i] );
+	ham_digi.tx()->put_tx( psk::ctrl_chars::TX_CNTRL_AUTOSTOP );
 	std::cout << ham_digi.enable( true ) << std::endl;
 	::sleep(2);
 	std::cout << "TRANSMIT " << std::endl;
