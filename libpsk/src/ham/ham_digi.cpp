@@ -9,7 +9,7 @@
 #ifndef COMPILED_UNDER_ISIX
 #include "port/pulse/pulse_device.hpp"
 #else
-#error not implemented yet
+#warning not implemented yet
 #endif
 #include "psk/decoder.hpp"
 #include "psk/modulator.hpp"
@@ -28,6 +28,10 @@ namespace
 		return new pulse_device( std::bind(h, sys_idx, std::placeholders::_1) );
 	}
 #else
+	inline trx_device_base* create_default_device( ham_digi::handler_t h ) {
+		return nullptr;
+		return nullptr;
+	}
 #endif
 }
 /* ------------------------------------------------------------------------- */

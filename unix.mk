@@ -9,8 +9,6 @@ CP      = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump 
 SIZE 	= $(CROSS_COMPILE)size
 
-#Current platform
-PLATFORM_DEVICE ?= BFC1
 
 #Pozostale ustawienia kompilatora
 ASFLAGS += 
@@ -40,11 +38,6 @@ ASFLAGS += -fomit-frame-pointer
 CFLAGS += -ffunction-sections -fdata-sections
 CXXFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS+= -Wl,--gc-sections
-endif
-
-ifeq ($(PLATFORM_DEVICE), BF210)
-CFLAGS += -DPLCXML_BF210_PLATFORM
-CXXFLAGS += -DPLCXML_BF210_PLATFORM	
 endif
 
 

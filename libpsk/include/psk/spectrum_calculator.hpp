@@ -8,6 +8,7 @@
 #ifndef LIBPSK_SPECTRUM_CALCULATOR_HPP_
 #define LIBPSK_SPECTRUM_CALCULATOR_HPP_
 /*----------------------------------------------------------*/
+#include <cmath>
 #include <cstddef>
 #include <complex>
 #include <cstring>
@@ -15,7 +16,6 @@
 /*----------------------------------------------------------*/
 namespace ham {
 namespace psk {
-
 /*----------------------------------------------------------*/
 //Class spectrum calculator calculate the current spectrum
 class spectrum_calculator {
