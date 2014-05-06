@@ -9,7 +9,7 @@
 #ifndef COMPILED_UNDER_ISIX
 #include "libpsk/port/pulse/pulse_device.hpp"
 #else
-#warning not implemented yet
+#include "libpsk/port/isix/stm32adac_device.hpp"
 #endif
 #include "libpsk/psk/decoder.hpp"
 #include "libpsk/psk/modulator.hpp"
@@ -31,13 +31,13 @@ namespace {
 #ifndef COMPILED_UNDER_ISIX
 	inline trx_device_base* create_default_device( ham_digi::handler_t h )
 	{
-		static const int sys_idx = ham_digi::SYS_CALLBACK_ID;
+		static constexpr auto sys_idx = ham_digi::SYS_CALLBACK_ID;
 		return new pulse_device( std::bind(h, sys_idx, std::placeholders::_1) );
 	}
 #else
 	inline trx_device_base* create_default_device( ham_digi::handler_t h ) {
-		terminate();
-		return nullptr;
+		static constexpr auto sys_idx = ham_digi::SYS_CALLBACK_ID;
+		return new stm32adac_device( std::bind( h, sys_idx, std::placeholders::_1 ) );
 	}
 #endif
 }

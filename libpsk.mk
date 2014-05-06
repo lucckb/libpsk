@@ -2,6 +2,7 @@
 LIBPSK_CPPSRC += $(wildcard $(LIBPSK_DIR)/libpsk/src/codec/*.cpp)
 LIBPSK_CPPSRC += $(wildcard $(LIBPSK_DIR)/libpsk/src/ham/*.cpp)
 LIBPSK_CPPSRC += $(wildcard $(LIBPSK_DIR)/libpsk/src/psk/*.cpp)
+LIBPSK_CPPSRC += $(wildcard $(LIBPSK_DIR)/libpsk/src/port/isix/*.cpp)
 LIBPSK_INC += -I$(LIBPSK_DIR)/libpsk/include
 
 
