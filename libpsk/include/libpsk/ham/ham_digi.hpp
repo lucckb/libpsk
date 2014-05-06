@@ -8,7 +8,7 @@
 #ifndef HAM_DIGI_HPP_
 #define HAM_DIGI_HPP_
 /* ------------------------------------------------------------------------- */
-#include "codec/trx_device_base.hpp"
+#include "libpsk/codec/trx_device_base.hpp"
 #include <memory>
 /* ------------------------------------------------------------------------- */
 namespace ham {

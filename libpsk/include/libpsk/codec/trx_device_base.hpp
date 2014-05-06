@@ -12,10 +12,10 @@
 #include <functional>
 #include <array>
 #include <memory>
-#include "psk/spectrum_calculator.hpp"
-#include "codec_types.hpp"
-#include "codec/trx_device_base.hpp"
-#include "codec/modulation_config.hpp"
+#include "libpsk/psk/spectrum_calculator.hpp"
+#include "libpsk/codec/codec_types.hpp"
+#include "libpsk/codec/trx_device_base.hpp"
+#include "libpsk/codec/modulation_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

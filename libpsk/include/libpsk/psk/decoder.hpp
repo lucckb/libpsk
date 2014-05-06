@@ -15,8 +15,8 @@
 #include <complex>
 #include <functional>
 #include "imd_calculator.hpp"
-#include "dsp/nco_mixer.hpp"
-#include "dsp/fir_decimate.hpp"
+#include "libpsk/dsp/nco_mixer.hpp"
+#include "libpsk/dsp/fir_decimate.hpp"
 #include "agc.hpp"
 #include "afc.hpp"
 #include "synchronizer.hpp"
@@ -24,10 +24,10 @@
 #include "viterbi_decoder.hpp"
 #include "squelch.hpp"
 #include "symbol_decoder.hpp"
-#include "codec/codec_types.hpp"
-#include "codec/trx_device_base.hpp"
-#include "psk/dyn_queue.hpp"
-#include "codec/psk_config.hpp"
+#include "libpsk/codec/codec_types.hpp"
+#include "libpsk/codec/trx_device_base.hpp"
+#include "libpsk/psk/dyn_queue.hpp"
+#include "libpsk/codec/psk_config.hpp"
 
 /* ------------------------------------------------------------------------- */
 namespace ham {

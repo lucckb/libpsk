@@ -9,7 +9,7 @@
 #define PORT_PULSE_DEVICE_HPP_
 /* ------------------------------------------------------------------------- */
 
-#include "codec/trx_device_base.hpp"
+#include "libpsk/codec/trx_device_base.hpp"
 #include <thread>
 #include <memory>
 #include <mutex>

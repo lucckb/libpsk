@@ -10,7 +10,7 @@
 #define PSK_SYMBOL_DECODER_HPP_
 
 /* ------------------------------------------------------------------------- */
-#include "psk/varicode.hpp"
+#include "libpsk/psk/varicode.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

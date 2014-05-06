@@ -6,7 +6,7 @@
  *      Author: lucck
  */
 /* ------------------------------------------------------------------------- */
-#include "psk/decoder.hpp"
+#include "libpsk/psk/decoder.hpp"
 #include <complex>
 #include <cmath>
 #include <cstdio>

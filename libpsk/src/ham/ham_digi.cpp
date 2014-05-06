@@ -5,22 +5,29 @@
  *      Author: lucck
  */
 /* ------------------------------------------------------------------------- */
-#include "ham/ham_digi.hpp"
+#include "libpsk/ham/ham_digi.hpp"
 #ifndef COMPILED_UNDER_ISIX
-#include "port/pulse/pulse_device.hpp"
+#include "libpsk/port/pulse/pulse_device.hpp"
 #else
 #warning not implemented yet
 #endif
-#include "psk/decoder.hpp"
-#include "psk/modulator.hpp"
+#include "libpsk/psk/decoder.hpp"
+#include "libpsk/psk/modulator.hpp"
 #include <functional>
+#include <new>
+#include <cstdlib>
 /* ------------------------------------------------------------------------- */
-
 namespace ham {
 namespace psk {
 /* ------------------------------------------------------------------------- */
-namespace
-{
+namespace {
+	inline void terminate() {
+#ifdef __EXCEPTIONS
+		throw std::bad_alloc();
+#else
+		std::abort();
+#endif
+	}
 #ifndef COMPILED_UNDER_ISIX
 	inline trx_device_base* create_default_device( ham_digi::handler_t h )
 	{
@@ -29,7 +36,7 @@ namespace
 	}
 #else
 	inline trx_device_base* create_default_device( ham_digi::handler_t h ) {
-		return nullptr;
+		terminate();
 		return nullptr;
 	}
 #endif

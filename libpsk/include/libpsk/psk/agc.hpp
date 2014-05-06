@@ -10,7 +10,7 @@
 /* ------------------------------------------------------------------------- */
 #include <complex>
 #include <limits>
-#include "dsp/sqrt_int.hpp"
+#include "libpsk/dsp/sqrt_int.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

@@ -9,7 +9,7 @@
 #define PSK_SQUELCH_HPP_
 /* ------------------------------------------------------------------------- */
 #include "diff_angle_calc.hpp"
-#include "codec/codec_types.hpp"
+#include "libpsk/codec/codec_types.hpp"
 
 /* ------------------------------------------------------------------------- */
 namespace ham {

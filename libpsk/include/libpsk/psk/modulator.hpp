@@ -12,12 +12,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
-#include "psk/dyn_queue.hpp"
-#include "psk/symbol_encoder.hpp"
-#include "dsp/nco_mixer.hpp"
-#include "codec/codec_types.hpp"
-#include "codec/trx_device_base.hpp"
-#include "codec/psk_config.hpp"
+#include "libpsk/psk/dyn_queue.hpp"
+#include "libpsk/psk/symbol_encoder.hpp"
+#include "libpsk/dsp/nco_mixer.hpp"
+#include "libpsk/codec/codec_types.hpp"
+#include "libpsk/codec/trx_device_base.hpp"
+#include "libpsk/codec/psk_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

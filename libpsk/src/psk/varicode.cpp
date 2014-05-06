@@ -5,7 +5,7 @@
  *      Author: lucck
  */
 
-#include "psk/varicode.hpp"
+#include "libpsk/psk/varicode.hpp"
 
 namespace ham {
 namespace psk {

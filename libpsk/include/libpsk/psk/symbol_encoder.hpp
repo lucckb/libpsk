@@ -9,9 +9,9 @@
 #define PSK_SYMBOL_ENCODER_HPP_
 
 /* ------------------------------------------------------------------------- */
-#include "psk/control_chars.hpp"
-#include "psk/varicode.hpp"
-#include "codec/psk_config.hpp"
+#include "libpsk/psk/control_chars.hpp"
+#include "libpsk/psk/varicode.hpp"
+#include "libpsk/codec/psk_config.hpp"
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {

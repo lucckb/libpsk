@@ -3,11 +3,11 @@
 //ffplay -f f64le -ar 8000 -channels 1 ~/worksrc/workspace/psk31/test.raw
 #include <limits>
 #include <cmath>
-#include <psk/decoder.hpp>
-#include <psk/modulator.hpp>
+#include <libpsk/psk/decoder.hpp>
+#include <libpsk/psk/modulator.hpp>
 #include <functional>
-#include <codec/trx_device_base.hpp>
-#include <port/pulse/pulse_device.hpp>
+#include <libpsk/codec/trx_device_base.hpp>
+#include <libpsk/port/pulse/pulse_device.hpp>
 
 #ifndef __arm__
 #include <functional>
@@ -24,7 +24,7 @@ extern "C" {
 }
 #include <pulse/error.h>
 #include <unistd.h>
-#include <ham/ham_digi.hpp>
+#include <libpsk/ham/ham_digi.hpp>
 
 namespace 
 {

@@ -5,7 +5,7 @@
  *      Author: lucck
  */
 
-#include "psk/symbol_encoder.hpp"
+#include "libpsk/psk/symbol_encoder.hpp"
 
 namespace ham {
 namespace psk {

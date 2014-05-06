@@ -6,10 +6,10 @@
  */
 
 /*----------------------------------------------------------*/
-#include "psk/spectrum_calculator.hpp"
-#include "dsp/fft.h"
-#include "dsp/sqrt_int.hpp"
-#include "dsp/log2_int.hpp"
+#include "libpsk/psk/spectrum_calculator.hpp"
+#include "libpsk/dsp/fft.h"
+#include "libpsk/dsp/sqrt_int.hpp"
+#include "libpsk/dsp/log2_int.hpp"
 #include <algorithm>
 #include <limits>
 /*----------------------------------------------------------*/
