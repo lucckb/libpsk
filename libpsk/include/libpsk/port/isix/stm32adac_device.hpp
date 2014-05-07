@@ -19,6 +19,8 @@
 #pragma once
 /* ------------------------------------------------------------------ */ 
 #include "libpsk/codec/trx_device_base.hpp"
+#include <board/adc_audio.hpp>
+#include <board/dac_audio.hpp>
 /* ------------------------------------------------------------------ */
 namespace ham {
 namespace psk {
@@ -40,6 +42,11 @@ protected:
 	virtual int join();
 	// Initialize sound hardware in selected mode
 	virtual int setup_sound_hardware( trx_device_base::mode m );
+private:
+	static constexpr auto sample_size = 256U;
+	static constexpr auto sample_nbufs = 10U;
+	drv::dac_audio m_dac_audio { sample_size, sample_nbufs };
+	drv::adc_audio m_adc_audio { sample_size, sample_nbufs  };
 };
 /* ------------------------------------------------------------------ */
 }
