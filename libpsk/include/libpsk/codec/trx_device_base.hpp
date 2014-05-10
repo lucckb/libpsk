@@ -244,23 +244,19 @@ public:
 		return false;
 	}
 	//Spectrum calculator object
-	spectrum_calculator& get_spectrum()
-	{
+	spectrum_calculator& get_spectrum() {
 		return m_spectrum;
 	}
 	// Get RX object by IDX
-	rx_codec* get_rx_codec( int idx )
-	{
+	rx_codec* get_rx_codec( int idx ) {
 		return idx<MAX_CODECS?m_rx_codecs[idx].get():nullptr;
 	}
 	// Get TX object
-	tx_codec* get_tx_codec()
-	{
+	tx_codec* get_tx_codec() {
 		return m_tx_codec.get();
 	}
 	//Set FFT interval
-	void set_fft_interval( unsigned short timeout )
-	{
+	void set_fft_interval( unsigned short timeout ) {
 		m_spectrum_timeout = timeout;
 	}
 	//Lock and unlock device
@@ -280,15 +276,12 @@ protected:
 	//DAC vector func
 	bool dac_process( sample_type *buf, size_t len );
 	//Set mode
-	void set_mode_off()
-	{
+	void set_mode_off() {
 		m_mode = mode::off;
 	}
 	//Callback notify when extra params was ready
-	void callback_notify( event::type ev )
-	{
-		if( m_evt_callback )
-		{
+	void callback_notify( event::type ev ) {
+		if( m_evt_callback ) {
 			const event _ev( ev );
 			m_evt_callback( _ev );
 		}

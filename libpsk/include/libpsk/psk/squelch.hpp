@@ -136,11 +136,12 @@ public:
 					m_dev_ave =  (m_dev_ave-m_dev_ave/m_squelch_speed) + (temp/m_squelch_speed);
 				else
 					m_dev_ave =  (m_dev_ave-m_dev_ave/(m_squelch_speed*2)) + (temp/(m_squelch_speed*2));
-				if(m_off_count > 20 )	// fast squelch counter
+				if(m_off_count > 20 ) {	// fast squelch counter
 					if( is_bpsk ) //if BPSK
 						m_dev_ave = (100-0)*SCALE;		//set to 0%
-				else
-					m_off_count++;
+					else
+						m_off_count++;
+				}
 				m_on_count = 0;
 				if( m_q_freq_error >= 0 )
 				{

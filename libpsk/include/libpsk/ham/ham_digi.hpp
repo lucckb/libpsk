@@ -5,8 +5,7 @@
  *      Author: lucck
  */
 /* ------------------------------------------------------------------------- */
-#ifndef HAM_DIGI_HPP_
-#define HAM_DIGI_HPP_
+#pragma once
 /* ------------------------------------------------------------------------- */
 #include "libpsk/codec/trx_device_base.hpp"
 #include <memory>
@@ -16,8 +15,7 @@ namespace psk {
 
 /* ------------------------------------------------------------------------- */
 //Object noncopyable
-class ham_digi
-{
+class ham_digi {
 	ham_digi(const ham_digi&) = delete;
 	ham_digi& operator=(const ham_digi&) = delete;
 	static constexpr auto TX_QUELEN = 512;
@@ -25,14 +23,12 @@ class ham_digi
 public:
 	static constexpr auto SYS_CALLBACK_ID = -1;
 	/* Modulation structure */
-	enum class modulation : short
-	{
+	enum class modulation : short {
 		notset,
 		psk			//PSK modulaton
 	};
 	/* Error codes API */
-	enum err
-	{
+	enum err {
 		err_ok,					//No error
 		err_no_modulation,		//Modulation no set
 		err_tx_busy,			//Device is transmit busy
@@ -59,48 +55,39 @@ public:
 	int rx_channel_add();						/* Extra channel ADD */
 	int rx_channel_remove( int chn_id );		/* Extra channel remove */
 	/* Wait to finish */
-	int join()
-	{
+	int join() {
 		return m_iodev->join();
 	}
 private:
-	class tx_proxy
-	{
+	class tx_proxy {
 		tx_proxy(const tx_proxy&) = delete;
 		tx_proxy& operator=(const tx_proxy&) = delete;
 	public:
 		tx_proxy( trx_device_base *obj )
-		: m_obj(obj)
-		{
+		: m_obj(obj) {
 			if( m_obj ) m_obj->lock();
 		}
-		~tx_proxy()
-		{
+		~tx_proxy() {
 			if( m_obj ) m_obj->unlock();
 		}
-		tx_codec* operator->()
-		{
+		tx_codec* operator->() {
 			return m_obj->get_tx_codec();
 		}
 	private:
 		trx_device_base* const m_obj;
 	};
-	class rx_proxy
-	{
+	class rx_proxy {
 		rx_proxy(const rx_proxy&) = delete;
 		rx_proxy& operator=(const rx_proxy&) = delete;
 	public:
 		rx_proxy( trx_device_base *obj, int id )
-			: m_obj(obj), m_id(id)
-		{
+			: m_obj(obj), m_id(id) {
 			if( m_obj ) m_obj->lock();
 		}
-		~rx_proxy()
-		{
+		~rx_proxy() {
 			if( m_obj ) m_obj->unlock();
 		}
-		rx_codec* operator->()
-		{
+		rx_codec* operator->() {
 			return m_obj->get_rx_codec( m_id );
 		}
 	private:
@@ -113,16 +100,13 @@ private:
 		spectrum_proxy& operator=(const spectrum_proxy&) = delete;
 	public:
 		spectrum_proxy( trx_device_base *obj)
-			: m_obj(obj)
-		{
+			: m_obj(obj) {
 			if( m_obj ) m_obj->lock( trx_device_base::lock_spectrum );
 		}
-		~spectrum_proxy()
-		{
+		~spectrum_proxy() {
 			if( m_obj ) m_obj->unlock( trx_device_base::lock_spectrum );
 		}
-		spectrum_calculator& get()
-		{
+		spectrum_calculator& get() {
 			return m_obj->get_spectrum();
 		}
 	private:
@@ -144,6 +128,4 @@ private:
 
 /* ------------------------------------------------------------------------- */
 }}
-/* ------------------------------------------------------------------------- */
-#endif /* HAM_DIGI_HPP_ */
 /* ------------------------------------------------------------------------- */
