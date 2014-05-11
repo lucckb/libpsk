@@ -22,17 +22,33 @@
 #include <board/adc_audio.hpp>
 #include <board/dac_audio.hpp>
 #include <isix.h>
+#include <foundation/dbglog.h>
 /* ------------------------------------------------------------------ */
 namespace ham {
 namespace psk {
 /* ------------------------------------------------------------------ */ 
 //STM32 AD/AC device
 class stm32adac_device : public trx_device_base, isix::task_base {
+	static constexpr auto THREAD_STACK_SIZE = 1024;
+	static constexpr auto THREAD_PRIORITY = 2;
 public:
 	static constexpr auto err_success = 0;
 	//! Constructor
 	stm32adac_device( handler_t evt_callback ) 
 		: trx_device_base( evt_callback ) {
+#if 0
+		//FIXME: Testonly sintab
+		    static constexpr auto fo = 1000;
+			static constexpr auto calc = 32767;
+			static constexpr float pi = 4 * std::atan(1);
+			for( int n = 0; n < 256; ++n ) {
+				m_tbuf[n] = calc + calc * std::sin( float(fo) * ( 2.0f * pi ) * (float)n / float(8000) );
+				//m_buf[n] = (n*65535)/ns;
+				//m_buf[n] = (n%2)?65535:0;
+				dbprintf("V=%i", (int)m_tbuf[n] - (int)calc );
+			}
+#endif
+			start_thread( THREAD_STACK_SIZE, THREAD_PRIORITY );
 	}
 	//! Destructor
 	virtual ~stm32adac_device() {
@@ -72,7 +88,9 @@ private:
 	isix::semaphore m_spectrum { 1, 1 };							//! Spectrum lock
 	isix::semaphore m_busy { 1, 1 };								//! Busy notificator
 	isix::semaphore m_start { 0, 1 };								//! Start thread
-	int m_thread_status {};											//! Thread error code
+	volatile int m_thread_status {};								//! Thread error code
+	volatile bool m_thread_cont { false };							//! Break main loop
+	//uint16_t m_tbuf[sample_size];									//! Test buffer
 };
 /* ------------------------------------------------------------------ */
 }

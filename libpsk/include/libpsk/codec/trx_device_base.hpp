@@ -182,7 +182,7 @@ class trx_device_base	//Add noncopyable
 	trx_device_base& operator=(const trx_device_base&) = delete;
 	static constexpr auto MAX_CODECS = 4;
 	static constexpr auto FFT_UPDATE_TIME_MS = 250; //FFT update time in ms
-	static const auto TX_SAMPLE_RATE = 32000;
+	static const auto TX_SAMPLE_RATE = 8000;
 	static const auto RX_SAMPLE_RATE = 8000;
 public:
 	//Os specific locker

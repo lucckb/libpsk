@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 #include "libpsk/port/isix/stm32adac_device.hpp"
-
+#include <foundation/dbglog.h>
 /* ------------------------------------------------------------------ */
 namespace ham {
 namespace psk {
@@ -66,9 +66,11 @@ int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 		}
 		const int ret = enable_hw_rx();
 		if( ret != 0 ) return ret;
+		dbprintf("Do receive processing");
 	}
 	if( m == trx_device_base::mode::transmit && get_mode()!=trx_device_base::mode::transmit )
 	{
+		dbprintf("Do transmit processing");
 		if( get_mode()==trx_device_base::mode::on )
 		{
 			const int ret = disable_hw_rx();
@@ -81,12 +83,16 @@ int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 	if( get_mode()!=trx_device_base::mode::off && m == trx_device_base::mode::off )
 	{
 		//Disable and wait for stop
+		m_thread_cont = false;
 		join();
+		dbprintf("Thread exited - terminate");
 		return m_thread_status;
 	}
 	else if( get_mode()==trx_device_base::mode::off && m != trx_device_base::mode::off  )
 	{
 		//! Restart the thread again
+		dbprintf("Thread wakeup request");
+		m_thread_cont = true;
 		return  m_start.signal();
 	}
 	return err_success;
@@ -102,10 +108,18 @@ void stm32adac_device::main()
 		m_thread_status = m_busy.wait( isix::ISIX_TIME_INFINITE );
 		if( m_thread_status < 0 ) break;
 		int errcode = 0;
-		for(;m_start.getval()>0 && !errcode ;) {
+		dbprintf("Start procesing PSK");
+		for(; m_thread_cont && !errcode ;) {
+			lock( trx_device_base::lock_object );
 			if     ( get_mode()==trx_device_base::mode::on ) 	   errcode = receive_thread();
 			else if( get_mode()==trx_device_base::mode::transmit ) errcode = transmit_thread();
+			else {
+				dbprintf("Unknown mode %i!", get_mode() );
+				break;
+			}
+			unlock( trx_device_base::lock_object );
 		}
+		dbprintf("Stop procesing PSK reason getval: %i error: %i", m_start.getval(), errcode );
 		if( get_mode()==trx_device_base::mode::on ) {
 			//Disable sound receive
 			set_mode_off();
@@ -130,9 +144,8 @@ int stm32adac_device::receive_thread()
 	if( ptr == nullptr ) {
 		return m_adc_audio.errno();
 	}
-	lock( trx_device_base::lock_object );
 	adc_process( ptr, sample_size );
-	unlock( trx_device_base::lock_object );
+	//dbprintf("RX process ptr %p", ptr );
 	return m_adc_audio.commit_buffer( reinterpret_cast<uint16_t*>(ptr) );
 }
 /* ------------------------------------------------------------------ */ 
@@ -143,9 +156,14 @@ int stm32adac_device::transmit_thread()
 	if( !buf ) {
 		return m_dac_audio.errno();
 	}
-	lock( trx_device_base::lock_object );
 	auto status = dac_process( reinterpret_cast<int16_t*>(buf), sample_size );
-	unlock( trx_device_base::lock_object );
+	if( status == 0 ) {
+		for( size_t i = 0; i < sample_size; ++i ) {
+			reinterpret_cast<uint16_t*>(buf)[i] =  int( reinterpret_cast<int16_t*>(buf)[i] ) + 32767;
+		}
+	}
+//	memcpy( buf, m_tbuf, sizeof m_tbuf );
+	//dbprintf("TX process ptr %p", buf );
 	auto cstatus = m_dac_audio.commit_buffer( buf );
 	if( cstatus) return cstatus;
 	if( status) return status;
