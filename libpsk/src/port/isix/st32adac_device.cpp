@@ -149,7 +149,7 @@ int stm32adac_device::receive_thread()
 		reinterpret_cast<int16_t*>(ptr)[i] = int( ptr[i] ) + std::numeric_limits<int16_t>::min();
 	}
 	adc_process( reinterpret_cast<const int16_t*>(ptr), sample_size );
-	//dbprintf("RX process ptr %p", ptr );
+///	dbprintf("V %i", int(*reinterpret_cast<const int16_t*>(ptr)) );
 	return m_adc_audio.commit_buffer( ptr );
 }
 /* ------------------------------------------------------------------ */ 
