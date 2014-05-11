@@ -125,19 +125,30 @@ void stm32adac_device::main()
 //! Receive thread
 int stm32adac_device::receive_thread()
 {
-	{
-	//	std::lock_guard<std::mutex> lock( m_codec_mutex );
-	//	adc_process( &m_audio_buf[0], audio_buf_len );
+	//FIXME: Fix it later ( Pointers failure )
+	const auto ptr = reinterpret_cast<int16_t*>( m_adc_audio.get_sample_buffer() );
+	if( ptr == nullptr ) {
+		return m_adc_audio.errno();
 	}
-	return err_success;
+	lock( trx_device_base::lock_object );
+	adc_process( ptr, sample_size );
+	unlock( trx_device_base::lock_object );
+	return m_adc_audio.commit_buffer( reinterpret_cast<uint16_t*>(ptr) );
 }
 /* ------------------------------------------------------------------ */ 
 int stm32adac_device::transmit_thread() 
 {
-	{
-		//std::lock_guard<std::mutex> lock( m_codec_mutex );
-		//status = dac_process( &m_audio_buf[0], audio_buf_len );
+	//FIXME: Pointer matching
+	auto buf = m_dac_audio.reserve_buffer();
+	if( !buf ) {
+		return m_dac_audio.errno();
 	}
+	lock( trx_device_base::lock_object );
+	auto status = dac_process( reinterpret_cast<int16_t*>(buf), sample_size );
+	unlock( trx_device_base::lock_object );
+	auto cstatus = m_dac_audio.commit_buffer( buf );
+	if( cstatus) return cstatus;
+	if( status) return status;
 	return err_success;
 }
 /* ------------------------------------------------------------------ */
@@ -145,30 +156,6 @@ int stm32adac_device::transmit_thread()
 int stm32adac_device::join() 
 {
 	return m_busy.wait( isix::ISIX_TIME_INFINITE );
-}
-/* ------------------------------------------------------------------ */
-//!Disable hardware transmision
-int stm32adac_device::disable_hw_tx()
-{
-	return err_success;
-}
-/* ------------------------------------------------------------------ */ 
-//! Enable hardware transmision
-int stm32adac_device::enable_hw_tx()
-{
-	return err_success;
-}
-/* ------------------------------------------------------------------ */ 
-//! Disable hardware reception
-int stm32adac_device::disable_hw_rx()
-{
-	return err_success;
-}
-/* ------------------------------------------------------------------ */ 
-//! Enable hardware reception 
-int stm32adac_device::enable_hw_rx() 
-{
-	return err_success;
 }
 /* ------------------------------------------------------------------ */ 
 }}

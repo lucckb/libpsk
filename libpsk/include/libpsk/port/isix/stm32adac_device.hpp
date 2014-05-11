@@ -49,17 +49,23 @@ protected:
 	virtual void main();
 private:
 	//Hardware funcs
-	int enable_hw_rx();
-	int disable_hw_rx();
-	int enable_hw_tx();
-	int disable_hw_tx();
+	int enable_hw_rx() {
+		return m_adc_audio.record( get_tx_sample_rate() );
+	}
+	int disable_hw_rx() {
+		return m_adc_audio.stop();
+	}
+	int enable_hw_tx() {
+		return m_dac_audio.play( get_tx_sample_rate() );
+	}
+	int disable_hw_tx() {
+		return m_dac_audio.stop();
+	}
 	int receive_thread();
 	int transmit_thread();
 private:
 	static constexpr auto sample_size = 256U;		//! Sample buffer size
 	static constexpr auto sample_nbufs = 10U;		//! Number of sample buffs
-	static constexpr auto rec_sample_freq = 8000;	//! Sample ratio freq
-	static constexpr auto play_sample_freq = 32000;	//! Play rate frequency
 	drv::dac_audio m_dac_audio { sample_size, sample_nbufs };		//!ADC audio DEVICE
 	drv::adc_audio m_adc_audio { sample_size, sample_nbufs  };		//!DAC audio DEVICE
 	isix::semaphore m_lock { 1, 1 };								//! Global lock

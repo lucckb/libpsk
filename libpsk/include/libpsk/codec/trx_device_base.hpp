@@ -203,26 +203,21 @@ public:
 	static constexpr auto ALL = -1;
 	/* Constructor */
 	trx_device_base( handler_t evt_callback )
-		: m_evt_callback( evt_callback )
-	{
+		: m_evt_callback( evt_callback ) {
 	}
 	/* Destructor */
-	virtual ~trx_device_base()
-	{
+	virtual ~trx_device_base() {
 	}
-	unsigned get_tx_sample_rate() const
-	{
+	unsigned get_tx_sample_rate() const {
 		return TX_SAMPLE_RATE;
 	}
-	unsigned get_rx_sample_rate() const
-	{
+	unsigned get_rx_sample_rate() const {
 		return RX_SAMPLE_RATE;
 	}
 	/* Set RX or TX dev mode */
 	void set_mode( mode m );
 	/* Get RX or TX dev mode */
-	mode get_mode() const
-	{
+	mode get_mode() const {
 		return m_mode;
 	}
 	//Register RX codec
@@ -232,14 +227,12 @@ public:
 	// Destroy RX codec and remove from pool
 	bool remove_rx_codec( int idx = ALL );
 	// Remove tx codec
-	bool remove_tx_codec()
-	{
+	bool remove_tx_codec() {
 		m_tx_codec.reset();
 		return false;
 	}
 	// Add codec to the poll
-	bool add_tx_codec( tx_codec *c )
-	{
+	bool add_tx_codec( tx_codec *c ) {
 		m_tx_codec.reset( c );
 		return false;
 	}
