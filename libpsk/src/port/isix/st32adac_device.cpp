@@ -17,6 +17,7 @@
  */
 #include "libpsk/port/isix/stm32adac_device.hpp"
 #include <foundation/dbglog.h>
+#include <limits>
 /* ------------------------------------------------------------------ */
 namespace ham {
 namespace psk {
@@ -139,32 +140,34 @@ void stm32adac_device::main()
 //! Receive thread
 int stm32adac_device::receive_thread()
 {
-	//FIXME: Fix it later ( Pointers failure )
-	const auto ptr = reinterpret_cast<int16_t*>( m_adc_audio.get_sample_buffer() );
+	auto ptr =  m_adc_audio.get_sample_buffer();
 	if( ptr == nullptr ) {
 		return m_adc_audio.errno();
 	}
-	adc_process( ptr, sample_size );
+	//Convert unsigned int to signed int like sound card format
+	for( size_t i = 0; i < sample_size; ++i ) {
+		reinterpret_cast<int16_t*>(ptr)[i] = int( ptr[i] ) + std::numeric_limits<int16_t>::min();
+	}
+	adc_process( reinterpret_cast<const int16_t*>(ptr), sample_size );
 	//dbprintf("RX process ptr %p", ptr );
-	return m_adc_audio.commit_buffer( reinterpret_cast<uint16_t*>(ptr) );
+	return m_adc_audio.commit_buffer( ptr );
 }
 /* ------------------------------------------------------------------ */ 
 int stm32adac_device::transmit_thread() 
 {
-	//FIXME: Pointer matching
 	auto buf = m_dac_audio.reserve_buffer();
 	if( !buf ) {
 		return m_dac_audio.errno();
 	}
-	auto status = dac_process( reinterpret_cast<int16_t*>(buf), sample_size );
+	// Hardware DAC processing
+	const auto status = dac_process( reinterpret_cast<int16_t*>(buf), sample_size );
 	if( status == 0 ) {
 		for( size_t i = 0; i < sample_size; ++i ) {
-			reinterpret_cast<uint16_t*>(buf)[i] =  int( reinterpret_cast<int16_t*>(buf)[i] ) + 32767;
+			buf[i] =  int( reinterpret_cast<int16_t*>(buf)[i] ) + 
+				std::abs( std::numeric_limits<int16_t>::min() );
 		}
 	}
-//	memcpy( buf, m_tbuf, sizeof m_tbuf );
-	//dbprintf("TX process ptr %p", buf );
-	auto cstatus = m_dac_audio.commit_buffer( buf );
+	const auto cstatus = m_dac_audio.commit_buffer( buf );
 	if( cstatus) return cstatus;
 	if( status) return status;
 	return err_success;
