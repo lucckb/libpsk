@@ -22,11 +22,10 @@ class spectrum_calculator {
 public:
 	//Spectrum data type
 	typedef short pow_t;
-	//FFT scale
-	enum class scale : char
-	{
-		lin,
-		log
+	//! FFT scale
+	enum class scale : char {		//! Type of FFT scale
+		lin,	//! Normal linear
+		log		//! Logarithm scale
 	};
 private:
 	//Number of samples
@@ -42,39 +41,49 @@ public:
 	spectrum_calculator()
 	{}
 public:
-	bool copy_samples( const pow_t* samples, size_t len )
-	{
+	/** Copy input samples to buffer 
+	 *  @param[in] samples Input buffer sample pointer
+	 *  @param[in] len Sample buffer len
+	 *  @return true if fail
+	 */
+	bool copy_samples( const pow_t* samples, size_t len ) {
 		size_t cpyn = WIDTH - m_sample_buf_cnt;
 		if( len < cpyn ) cpyn = len;
 		std::memcpy( &m_real[m_sample_buf_cnt], samples, sizeof(pow_t) * cpyn );
 		m_sample_buf_cnt += cpyn;
 		m_energy_calculated = false;
-		if( m_sample_buf_cnt >= WIDTH )
-		{
+		if( m_sample_buf_cnt >= WIDTH ) {
 			m_sample_buf_cnt = 0;
 			return true;
 		}
-		else
-		{
+		else {
 			return false;
 		}
 	}
-	//Get buffer samples and calculate it
-	const pow_t& operator[]( size_t idx )
-	{
-		if( !m_energy_calculated )
-		{
+	/** Function return sample buffer
+	 * @return Pointer to sample data 
+	 */
+	const pow_t* buffer() {
+		if( !m_energy_calculated ) {
 			m_energy_calculated = true;
 			calculate_samples();
 		}
-		//TODO: Range checking
-		return m_real[idx];
+		return m_real;
 	}
-	//Set scale
-	void set_scale( scale sc, pow_t factor = std::numeric_limits<pow_t>::max() )
-	{
-		if( sc != m_scale)
-		{
+	/** Index overloaded operator for access the 
+	 *  data input FFT calculato
+	 *  @param[in]  idx Input index
+	 */
+	const pow_t& operator[]( size_t idx ) {
+		//TODO: Range checking
+		return buffer()[idx];
+	}
+	/** Set FFT scale ad scale type
+	 * @param[in] sc Input scale type @see scale 
+	 * @param[in] factor Limit value factor for variable
+	 */
+	void set_scale( scale sc, pow_t factor = std::numeric_limits<pow_t>::max() ) {
+		if( sc != m_scale) {
 			m_scale = sc;
 			m_energy_calculated = false;
 		}
@@ -84,18 +93,26 @@ public:
 			m_energy_calculated = false;
 		}
 	}
-	//Get min and max value
-	int min_value() const
-	{
+	/** Get minimum value represented by the app type
+	 * @return Minimum value variable type representation
+	 */
+	int min_value() const {
 		constexpr int minv = 20 * std::log10( 1.0/std::numeric_limits<pow_t>::max() );
 		if( m_scale == scale::log ) return minv;
 		else return 0;
 	}
+	/** Get maximum value represented by the returnet type
+	 * @returm Maximum value available as the fft representtation */
 	//Get MAX scale value
-	int max_value() const
-	{
+	int max_value() const {
 		if( m_scale == scale::log ) return 0;
 		else return 100;
+	}
+
+	/** return available buffer size 
+	 * @return available buffer size */
+	static constexpr size_t buffer_len() {
+		return WIDTH / 2;
 	}
 private:
 	//Calculate samplees
@@ -113,7 +130,7 @@ private:
 	 */
 	pow_t* const m_real { reinterpret_cast<pow_t* const>(m_cplx) };
 	bool m_energy_calculated { false };		//Energy is calculated
-	scale m_scale { scale::log };			//Current scale
+	scale m_scale { scale::lin };			//Current scale
 	pow_t m_factor { std::numeric_limits<pow_t>::max() };
 	short m_sample_buf_cnt {};		//Sample buffer counter
 };
