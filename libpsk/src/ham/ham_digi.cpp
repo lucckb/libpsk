@@ -171,21 +171,21 @@ int ham_digi::rx_channel_remove( int chn_id )
 }
 /* ------------------------------------------------------------------------- */
 //Get locked TX
-ham_digi::tx_proxy&& ham_digi::tx()
+ham_digi::tx_proxy ham_digi::tx()
 {
-	return std::move( tx_proxy( m_iodev.get() ) );
+	return tx_proxy( m_iodev.get() );
 }
 /* ------------------------------------------------------------------------- */
 //Locked access RX
-ham_digi::rx_proxy&& ham_digi::rx( int id )
+ham_digi::rx_proxy ham_digi::rx( int id )
 {
-	return std::move( rx_proxy( m_iodev.get(), id) );
+	return rx_proxy( m_iodev.get(), id );
 }
 /* ------------------------------------------------------------------------- */
 //Get spectrum
-ham_digi::spectrum_proxy&& ham_digi::get_spectrum()
+ham_digi::spectrum_proxy ham_digi::get_spectrum()
 {
-	return std::move( spectrum_proxy( m_iodev.get()) );
+	return spectrum_proxy( m_iodev.get() );
 }
 
 /* ------------------------------------------------------------------------- */
