@@ -5,8 +5,7 @@
  *      Author: lucck
  */
 /*----------------------------------------------------------*/
-#ifndef LIBPSK_SPECTRUM_CALCULATOR_HPP_
-#define LIBPSK_SPECTRUM_CALCULATOR_HPP_
+#pragma once
 /*----------------------------------------------------------*/
 #include <cmath>
 #include <cstddef>
@@ -139,6 +138,4 @@ private:
 
 } /* namespace psk */
 } /* namespace ham */
-/*----------------------------------------------------------*/
-#endif /* LIBPSK_SPECTRUM_CALCULATOR_HPP_ */
 /*----------------------------------------------------------*/
