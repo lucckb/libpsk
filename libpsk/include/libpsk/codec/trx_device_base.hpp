@@ -12,7 +12,7 @@
 #include <functional>
 #include <array>
 #include <memory>
-#include "libpsk/psk/spectrum_calculator.hpp"
+#include "libpsk/codec/spectrum_calculator.hpp"
 #include "libpsk/codec/codec_types.hpp"
 #include "libpsk/codec/trx_device_base.hpp"
 #include "libpsk/codec/modulation_config.hpp"

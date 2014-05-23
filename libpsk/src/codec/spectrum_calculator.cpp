@@ -6,7 +6,7 @@
  */
 
 /*----------------------------------------------------------*/
-#include "libpsk/psk/spectrum_calculator.hpp"
+#include "libpsk/codec/spectrum_calculator.hpp"
 #include "libpsk/dsp/fft.h"
 #include "libpsk/dsp/sqrt_int.hpp"
 #include "libpsk/dsp/log2_int.hpp"
