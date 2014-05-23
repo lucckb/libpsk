@@ -23,6 +23,23 @@ namespace {
 	}
 }
 /*----------------------------------------------------------*/
+//! Copy samples into internal buffer
+bool spectrum_calculator::copy_samples( const pow_t* samples, size_t len ) 
+{
+	size_t cpyn = WIDTH - m_sample_buf_cnt;
+	if( len < cpyn ) cpyn = len;
+	std::memcpy( &m_real[m_sample_buf_cnt], samples, sizeof(pow_t) * cpyn );
+	m_sample_buf_cnt += cpyn;
+	m_energy_calculated = false;
+	if( m_sample_buf_cnt >= WIDTH ) {
+		m_sample_buf_cnt = 0;
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+/*----------------------------------------------------------*/
 //Calculate samplees
 void spectrum_calculator::calculate_samples()
 {

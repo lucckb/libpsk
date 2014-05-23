@@ -45,20 +45,9 @@ public:
 	 *  @param[in] len Sample buffer len
 	 *  @return true if fail
 	 */
-	bool copy_samples( const pow_t* samples, size_t len ) {
-		size_t cpyn = WIDTH - m_sample_buf_cnt;
-		if( len < cpyn ) cpyn = len;
-		std::memcpy( &m_real[m_sample_buf_cnt], samples, sizeof(pow_t) * cpyn );
-		m_sample_buf_cnt += cpyn;
-		m_energy_calculated = false;
-		if( m_sample_buf_cnt >= WIDTH ) {
-			m_sample_buf_cnt = 0;
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
+	bool copy_samples( const pow_t* samples, size_t len );
+
+
 	/** Function return sample buffer
 	 * @return Pointer to sample data 
 	 */

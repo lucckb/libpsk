@@ -10,6 +10,7 @@
 #include "libpsk/codec/trx_device_base.hpp"
 #include <memory>
 /* ------------------------------------------------------------------------- */
+
 namespace ham {
 namespace psk {
 
