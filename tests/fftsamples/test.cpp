@@ -4,8 +4,8 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
-#include "dsp/fft.h"
-#include "psk/spectrum_calculator.hpp"
+#include "libpsk/dsp/fft.h"
+#include "libpsk/codec/spectrum_calculator.hpp"
 
 /* ---------------------------------------------------------------- */
 template <typename T, typename K >
@@ -60,7 +60,7 @@ float cplx_abs( std::complex<short> v )
 	for(int s=0; s< N_SAMPL; s++ )
 	  abst[s] = 20.0*log10((abst[s]+1)/MAX);
  */
-constexpr auto N_SAMPL = 512;
+constexpr auto N_SAMPL = 1024;
 constexpr auto FREQUENCY = N_SAMPL / 10;
 
 int main()
@@ -85,8 +85,9 @@ int main()
 	plot( t, y, N_SAMPL , "SI");
 
 	ham::psk::spectrum_calculator spc;
-	spc.set_scale( 	ham::psk::spectrum_calculator::scale::log );
-	spc.copy_samples( y, N_SAMPL );
+	spc.set_scale( 	ham::psk::spectrum_calculator::scale::lin );
+	spc.copy_samples( y, N_SAMPL  / 2 );
+	spc.copy_samples( y, N_SAMPL  / 2 );
 	plot( t, &spc[0], N_SAMPL/2, "FINAL");
 	for(int i=0; i<N_SAMPL/2; i++)
 		std::cout << spc[i] << std::endl;

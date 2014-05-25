@@ -28,8 +28,8 @@ public:
 	};
 private:
 	//Number of samples
-	static constexpr auto MLOG2 = 9;
-	static constexpr auto WIDTH = 1<<MLOG2;
+	static constexpr auto MLOG2 = 10;
+	static constexpr auto WIDTH = 1U<<MLOG2;
 	static constexpr int LOG_SCALE =  std::numeric_limits<pow_t>::max() + 1;
 	static constexpr int LOGVAL_SCALE = std::log2(std::log2( LOG_SCALE + 1 ) + 1);
 	//Make object noncopyable
@@ -120,7 +120,7 @@ private:
 	bool m_energy_calculated { false };		//Energy is calculated
 	scale m_scale { scale::lin };			//Current scale
 	pow_t m_factor { std::numeric_limits<pow_t>::max() };
-	short m_sample_buf_cnt {};		//Sample buffer counter
+	unsigned short m_sample_buf_cnt {};		//Sample buffer counter
 };
 
 /*----------------------------------------------------------*/
