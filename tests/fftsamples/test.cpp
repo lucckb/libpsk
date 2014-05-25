@@ -85,7 +85,7 @@ int main()
 	plot( t, y, N_SAMPL , "SI");
 
 	ham::psk::spectrum_calculator spc;
-	spc.set_scale( 	ham::psk::spectrum_calculator::scale::lin );
+	spc.set_scale( 	ham::psk::spectrum_calculator::scale::log );
 	spc.copy_samples( y, N_SAMPL  / 2 );
 	spc.copy_samples( y, N_SAMPL  / 2 );
 	plot( t, &spc[0], N_SAMPL/2, "FINAL");
