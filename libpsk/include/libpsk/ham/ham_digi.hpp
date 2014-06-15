@@ -20,9 +20,9 @@ class ham_digi {
 	ham_digi(const ham_digi&) = delete;
 	ham_digi& operator=(const ham_digi&) = delete;
 	static constexpr auto TX_QUELEN = 512;
-	static constexpr auto DEF_FREQ = 1000;
 public:
 	static constexpr auto SYS_CALLBACK_ID = -1;
+	static constexpr auto DEF_FREQ = 1000;
 	/* Modulation structure */
 	enum class modulation : short {
 		notset,
@@ -79,7 +79,7 @@ public:
 			return m_obj->get_tx_codec();
 		}
 	private:
-		trx_device_base* m_obj;
+		trx_device_base* m_obj {};
 	};
 	class rx_proxy {
 		rx_proxy(const rx_proxy&) = delete;
@@ -103,7 +103,7 @@ public:
 			return m_obj->get_rx_codec( m_id );
 		}
 	private:
-		trx_device_base*  m_obj;
+		trx_device_base*  m_obj {};
 		int m_id;
 	};
 public:
