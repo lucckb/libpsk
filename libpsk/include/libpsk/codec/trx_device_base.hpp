@@ -268,9 +268,13 @@ protected:
 	void adc_process( const sample_type *buf, size_t len );
 	//DAC vector func
 	bool dac_process( sample_type *buf, size_t len );
-	//Set mode
+	//! Set mode off
 	void set_mode_off() {
 		m_mode = mode::off;
+	}
+	//! Set mode on
+	void set_mode_rx() {
+		m_mode = mode::on;
 	}
 	//Callback notify when extra params was ready
 	void callback_notify( event::type ev ) {

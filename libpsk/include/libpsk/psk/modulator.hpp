@@ -31,8 +31,7 @@ class modulator : public tx_codec {
 public:
 	static constexpr auto RCODE_ERR = -1;
 	static constexpr auto RCODE_OK = 0;
-	enum class state
-	{
+	enum class state {
 		off,				//Decoder is off
 		sending,			//Decoder sending data
 		paused,				//Decoder is paused
@@ -53,29 +52,24 @@ public:
 	//Set mode
 	virtual int set_mode( const modulation_config_base& cfg );
 	//Get number of chars remaining
-	virtual size_t get_count() const
-	{
+	virtual size_t get_count() const {
 		return m_chqueue.size();
 	}
 	//Set auto shut off
-	void set_auto_shutoff( bool en = true )
-	{
+	void set_auto_shutoff( bool en = true ) {
 		m_need_shutoff = en;
 	}
 	//Get tx state
-	state get_state() const
-	{
+	state get_state() const {
 		return m_state;
 	}
 	//Check if device is in transmit state and can't switch to RX
-	virtual bool is_transmitting() const
-	{
+	virtual bool is_transmitting() const {
 		return m_state!=state::off;
 	}
 	//Modulator is in off state no generate carrier freq
 	//TODO: Add reset support
-	virtual void reset()
-	{}
+	virtual void reset();
 private:
 	//Vector lookup table
 	static constexpr int m_vect_lookup[6][2] =
@@ -108,7 +102,7 @@ private:
 	short m_present_phase {};
 	//Change this to array
 	std::array<int, 16> m_iq_phase_array {{}};
-	state m_state;
+	state m_state {};
 	bool m_need_shutoff { false };
 	int m_amble_ptr {};
 	bool m_no_squelch_tail {};

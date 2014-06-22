@@ -158,44 +158,46 @@ void  modulator::set_freqency( int frequency )
 	m_psk_phase_inc = (PI2I*frequency)/m_sample_freq;
 }
 /* ------------------------------------------------------------------------- */
+//! Reset the modulator before transmit
+void modulator::reset() {
+	if( m_state == state::off ) {
+		switch( m_encoder.get_mode() ) {
+			case mode::bpsk:
+			case mode::qpskl:
+			case mode::qpsku:
+				m_state = state::preamble;
+				break;
+			case mode::tune:
+				m_state = state::tune;
+				break;
+			default:
+				m_state = state::preamble;
+				break;
+		}
+	}
+}
+/* ------------------------------------------------------------------------- */
 //Set mode
 int modulator::set_mode( const modulation_config_base& _cfg )
 {
-	if( _cfg.cfg_type() != modulation_config_base::type::psk )
-	{
+	if( _cfg.cfg_type() != modulation_config_base::type::psk ) {
 		return RCODE_ERR;
 	}
 	const mod_psk_config& cfg = static_cast<const mod_psk_config&>(_cfg);
 	m_mode = cfg.mmode;
 	m_ramp = 0;
-	if( cfg.baudrate == baudrate::b63 )
-	{
+	if( cfg.baudrate == baudrate::b63 ) {
 		m_symbol_rate = 6250;
 	}
-	else if( cfg.baudrate == baudrate::b125 )
-	{
+	else if( cfg.baudrate == baudrate::b125 ) {
 		m_symbol_rate = 12500;
 	}
-	else
-	{
+	else {
 		m_symbol_rate = 3125;
-	}
-	switch( cfg.mmode )
-	{
-		case mode::bpsk:
-		case mode::qpskl:
-		case mode::qpsku:
-			m_state = state::preamble;
-			break;
-		case mode::tune:
-			m_state = state::tune;
-			break;
-		default:
-			m_state = state::preamble;
-			break;
 	}
 	m_psk_period_update = (m_sample_freq*RATE_SCALE)/ m_symbol_rate;
 	m_encoder.set_mode( cfg.mmode );
+	reset();
 	return RCODE_OK;
 }
 
@@ -273,13 +275,11 @@ int modulator::get_tx_char()
 	short ch;
 	if( m_chqueue.pop( ch ) )
 		ch = ctrl_chars::TXTOG_CODE;
-	if(m_temp_need_shutoff)
-	{
+	if(m_temp_need_shutoff) {
 		m_temp_need_shutoff = false;
 		m_need_shutoff = true;
 	}
-	if(m_temp_no_squelch_tail)
-	{
+	if(m_temp_no_squelch_tail) {
 		m_temp_no_squelch_tail = false;
 		m_no_squelch_tail = true;
 	}
@@ -290,17 +290,14 @@ int modulator::get_tx_char()
 int modulator::update_state_chr()
 {
 	int ch = 0;
-	switch( m_state )
-	{
+	switch( m_state ) {
 		case state::off:		//is receiving
 			ch = ctrl_chars::TXOFF_CODE;		//else turn off
 			m_need_shutoff = false;
 			break;
 		case state::tune:
 			ch = ctrl_chars::TXON_CODE;				// steady carrier
-			if(	m_need_shutoff )
-			{
-
+			if(	m_need_shutoff ) {
 				m_state = state::off;
 				m_amble_ptr = 0;
 				ch = ctrl_chars::TXOFF_CODE;
@@ -308,35 +305,29 @@ int modulator::update_state_chr()
 			}
 			break;
 		case state::postamble:		// ending sequence
-			if( ++m_amble_ptr>C_amble_size  || m_no_squelch_tail)
-			{
+			if( ++m_amble_ptr>C_amble_size || m_no_squelch_tail ) {
 				m_no_squelch_tail = false;
 				m_state = state::off;
 				m_amble_ptr = 0;
 				ch = ctrl_chars::TXOFF_CODE;
 				m_need_shutoff = false;
-			}
-			else
-			{
+			} else {
 				ch = C_postamble_chr;
 			}
 			break;
 		case state::preamble:			//starting sequence
-			if( ++m_amble_ptr>C_amble_size )
-			{
+			if( ++m_amble_ptr>C_amble_size ) {
 				m_state = state::sending;
 				m_amble_ptr = 0;
 				ch = ctrl_chars::TXTOG_CODE;
 			}
-			else
-			{
+			else {
 				ch = C_preamble_chr;
 			}
 			break;
 		case state::sending:		//if sending text from TX window
 			ch = get_tx_char();
-			if(	(ch == ctrl_chars::TXTOG_CODE) && m_need_shutoff)
-			{
+			if(	(ch == ctrl_chars::TXTOG_CODE) && m_need_shutoff ) {
 				m_state = state::postamble;
 			}
 			m_amble_ptr = 0;

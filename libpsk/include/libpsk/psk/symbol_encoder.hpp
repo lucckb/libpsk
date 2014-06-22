@@ -40,9 +40,12 @@ public:
 	symbol_encoder()
 	{}
 	//Set encoder mode
-	void set_mode( mode m )
-	{
+	void set_mode( mode m ) {
 		m_mode = m;
+	}
+	//Get encoder mode
+	mode get_mode() const {
+		return m_mode;
 	}
 	//Get next symbol
 	sym operator()( short ch )

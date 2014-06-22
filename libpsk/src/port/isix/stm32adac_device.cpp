@@ -57,11 +57,8 @@ bool stm32adac_device::try_lock( int id )
 int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 {
 	//Hardware  SETUP state
-	if( m == trx_device_base::mode::on && get_mode()!=trx_device_base::mode::on )
-	{
-
-		if( get_mode()==trx_device_base::mode::transmit )
-		{
+	if( m == trx_device_base::mode::on && get_mode()!=trx_device_base::mode::on ) {
+		if( get_mode()==trx_device_base::mode::transmit ) {
 			const int ret = disable_hw_tx();
 			if( ret != 0 ) return ret;
 		}
@@ -69,11 +66,9 @@ int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 		if( ret != 0 ) return ret;
 		dbprintf("Do receive processing");
 	}
-	if( m == trx_device_base::mode::transmit && get_mode()!=trx_device_base::mode::transmit )
-	{
+	if( m == trx_device_base::mode::transmit && get_mode()!=trx_device_base::mode::transmit ) {
 		dbprintf("Do transmit processing");
-		if( get_mode()==trx_device_base::mode::on )
-		{
+		if( get_mode()==trx_device_base::mode::on ) {
 			const int ret = disable_hw_rx();
 			if( ret != 0 ) return ret;
 		}
@@ -81,16 +76,14 @@ int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 		if( ret != 0 ) return ret;
 	}
 	//Thread specific switch
-	if( get_mode()!=trx_device_base::mode::off && m == trx_device_base::mode::off )
-	{
+	if( get_mode()!=trx_device_base::mode::off && m == trx_device_base::mode::off ) {
 		//Disable and wait for stop
 		m_thread_cont = false;
 		join();
 		dbprintf("Thread exited - terminate");
 		return m_thread_status;
 	}
-	else if( get_mode()==trx_device_base::mode::off && m != trx_device_base::mode::off  )
-	{
+	else if( get_mode()==trx_device_base::mode::off && m != trx_device_base::mode::off  ) {
 		//! Restart the thread again
 		dbprintf("Thread wakeup request");
 		m_thread_cont = true;
@@ -112,10 +105,29 @@ void stm32adac_device::main()
 		dbprintf("Start procesing PSK");
 		for(; m_thread_cont && !errcode ;) {
 			lock( trx_device_base::lock_object );
-			if     ( get_mode()==trx_device_base::mode::on ) 	   errcode = receive_thread();
-			else if( get_mode()==trx_device_base::mode::transmit ) errcode = transmit_thread();
-			else {
+			if( get_mode()==trx_device_base::mode::on ) {
+				errcode = receive_thread();
+			} else if( get_mode()==trx_device_base::mode::transmit ) { 
+				errcode = transmit_thread();
+				if( errcode == true ) {
+					set_mode_rx();
+					errcode = disable_hw_tx();
+					int errcode2 = enable_hw_rx();
+					if( errcode || errcode2 ) {
+						if( !errcode && errcode2 ) {
+							errcode = errcode2;
+						}
+						dbprintf("Fatal switch RX to TX err %i", errcode );
+						unlock( trx_device_base::lock_object );
+						break;
+					} else {
+						errcode = 0;
+						dbprintf("TO RX without off");
+					}
+				}
+			} else {
 				dbprintf("Unknown mode %i!", get_mode() );
+				unlock( trx_device_base::lock_object );
 				break;
 			}
 			unlock( trx_device_base::lock_object );
@@ -168,8 +180,8 @@ int stm32adac_device::transmit_thread()
 		}
 	}
 	const auto cstatus = m_dac_audio.commit_buffer( buf );
-	if( cstatus) return cstatus;
-	if( status) return status;
+	if( cstatus ) return cstatus;
+	if( status ) return status;
 	return err_success;
 }
 /* ------------------------------------------------------------------ */

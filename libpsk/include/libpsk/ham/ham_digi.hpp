@@ -30,13 +30,13 @@ public:
 	};
 	/* Error codes API */
 	enum err {
-		err_ok,					//No error
-		err_no_modulation,		//Modulation no set
-		err_tx_busy,			//Device is transmit busy
-		err_invalid_request,	//Invalid request
-		err_remove_codec,		//Remove codec invalid request
-		err_nofree_slots,		//No free slots
-		err_invalid_slot		//Invalid slot
+		err_ok ,			//No error
+		err_no_modulation= -4096,	//Modulation no set
+		err_tx_busy= -4997,			//Device is transmit busy
+		err_invalid_request= -4098,	//Invalid request
+		err_remove_codec= -4099,		//Remove codec invalid request
+		err_nofree_slots= -4100,		//No free slots
+		err_invalid_slot= -4101		//Invalid slot
 	};
 
 	/* Function event handler type
@@ -58,6 +58,11 @@ public:
 	/* Wait to finish */
 	int join() {
 		return m_iodev->join();
+	}
+	/** Get device base status */
+	using dev_mode = trx_device_base::mode;
+	dev_mode get_mode() const {
+		return m_iodev->get_mode();
 	}
 public:
 	class tx_proxy {

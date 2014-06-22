@@ -52,40 +52,36 @@ ham_digi::ham_digi( handler_t handler )
 /* Activate transmission */
 int ham_digi::enable( bool en )
 {
-	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() )
-	{
+	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() ) {
 		return err_no_modulation;
 	}
-	if( en )
-	{
+	if( en ) {
 		m_iodev->set_mode( trx_device_base::mode::on );
 	}
-	else
-	{
+	else {
 		m_iodev->set_mode( trx_device_base::mode::off );
 	}
 	return err_ok;
 }
 /* ------------------------------------------------------------------------- */
 /* Switch to TX RX */
-int ham_digi::set_tx( bool tx )
+int ham_digi::set_tx( bool totx )
 {
-	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() )
-	{
+	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() ) {
 		return err_no_modulation;
 	}
-	/* Not working yet */
+	/* FIXME:Really is needed prevent stop transmission in the middle?
+	 */
 	//if( m_iodev->get_tx_codec()->is_transmitting()  )
 	//{
 	//	return err_tx_busy;
 	//}
-	if( tx && m_iodev->get_mode()==trx_device_base::mode::on )
-	{
-
+	if( totx && m_iodev->get_mode()==trx_device_base::mode::on ) {
+		tx()->reset();
+		tx()->clear_tx();
 		m_iodev->set_mode( trx_device_base::mode::transmit );
 	}
-	else
-	{
+	else {
 		return err_invalid_request;
 	}
 	return err_ok;
@@ -155,16 +151,13 @@ int ham_digi::rx_channel_add()
 /* Extra channel remove */
 int ham_digi::rx_channel_remove( int chn_id )
 {
-	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() )
-	{
+	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() ) {
 		return err_no_modulation;
 	}
-	if( chn_id == 0 )
-	{
+	if( chn_id == 0 ) {
 		return err_invalid_request;
 	}
-	if( m_iodev->remove_rx_codec( chn_id ) )
-	{
+	if( m_iodev->remove_rx_codec( chn_id ) ) {
 		return err_invalid_slot;
 	}
 	return err_ok;
