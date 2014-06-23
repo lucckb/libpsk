@@ -7,7 +7,6 @@
 /* ------------------------------------------------------------------------- */
 #include "libpsk/psk/modulator.hpp"
 #include <cmath>
-
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -31,49 +30,40 @@ namespace
 		namespace mth
 		{
 			constexpr int PI2I = dsp::integer::trig::sin_arg_max<short,512>();
-			int cos( int angle )
-			{
+			int cos( int angle ) {
 				return dsp::integer::trig::sin<short, 512, C_rms>(PI2I/4 + angle);
 			}
 		}
 		//zero shape
-		int Z( int, int )
-		{
+		constexpr inline int Z( int, int ) {
 			return 0;
 		}
 		//Plus one shape
-		int P( int, int )
-		{
+		constexpr inline int P( int, int ) {
 			return C_rms;
 		}
 		//Minus one shape
-		int M( int, int )
-		{
+		constexpr inline int M( int, int ) {
 			return -C_rms;
 		}
 		//Plus minus transient
-		int PM( int pos, int max )
-		{
+		inline int PM( int pos, int max ) {
 			return mth::cos( (mth::PI2I*pos)/(2*max) );
 		}
 		//Minus plus transient
-		int MP( int pos, int max )
-		{
+		inline int MP( int pos, int max ) {
 			return -mth::cos( (mth::PI2I*pos)/(2*max) );
 		}
 		//Plus zero transient
-		int PZ( int pos, int max )
-		{
+		inline int PZ( int pos, int max ) {
 			return (pos<max/2)?(mth::cos( (mth::PI2I*pos)/(2*max) )):(0);
 		}
 		//Minus zero transient
-		int MZ(int pos, int max)
-		{
+		inline int MZ(int pos, int max) {
 			return (pos<max/2)?(-mth::cos((mth::PI2I*pos)/(2*max))):(0);
 		}
 		//Zero plus transient
-		int ZP(int pos, int max)
-		{
+		inline int ZP(int pos, int max) {
 			return (pos<max/2)?(0):(-mth::cos((mth::PI2I*pos)/(2*max)));
 		}
 	}
@@ -206,29 +196,32 @@ int modulator::set_mode( const modulation_config_base& _cfg )
 void modulator::put_tx( short txchar )
 {
 	constexpr char BACK_SPACE_CODE = 0x08;
-	//EnterCriticalSection(&m_CriticalSection);
-	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP )
-	{
+	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP ) {
 		m_temp_need_shutoff = true;
 		if( m_state == state::tune )
 			m_need_shutoff = true;
-	}
-	else if( txchar == ctrl_chars::TX_CNTRL_NOSQTAIL )
-	{
+	} else if( txchar == ctrl_chars::TX_CNTRL_NOSQTAIL ) {
 		m_temp_no_squelch_tail = true;
-	}
-	else
-	{
-		if( (txchar != BACK_SPACE_CODE) || m_chqueue.empty() )
-		{
+	} else {
+		if( (txchar != BACK_SPACE_CODE) || m_chqueue.empty() ) {
 			m_chqueue.push( txchar );
-		}
-		else	//see if is a backspace and if can delete it in the queue
-		{
-			m_chqueue.pop();
+		} else {
+			//see if is a backspace and if can delete it in the queue
+			int nbs = 1;
+			while( !m_chqueue.empty() && nbs>0 ) {
+				short ch = 0;
+				m_chqueue.pop( ch );
+				if( ch == BACK_SPACE_CODE ) {
+					nbs++;
+				} else {
+					nbs--;
+				}
+			} 
+			for( ;nbs > 0; --nbs ) {
+				m_chqueue.push( BACK_SPACE_CODE );
+			}
 		}
 	}
-	//LeaveCriticalSection(&m_CriticalSection);
 }
 /* ------------------------------------------------------------------------- */
 //Operator on new samples

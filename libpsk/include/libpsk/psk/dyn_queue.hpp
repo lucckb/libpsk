@@ -14,26 +14,21 @@
 /*----------------------------------------------------------*/
 namespace fnd
 {
-
 /*----------------------------------------------------------*/
 template <typename T>
-class dyn_queue
-{
+class dyn_queue {
 public:
-
 	//Fixed queue constructor
 	explicit dyn_queue( size_t len )
 		: buf(new T[len]), head(0),tail(0), Sz(len)
 	{
 	}
 	//Destructor
-	~dyn_queue()
-	{
+	~dyn_queue() {
 		delete [] buf;
 	}
 	//Push element
-	bool push(const T &c)
-	{
+	bool push(const T &c) {
 		std::size_t next;
 		// check if FIFO has room
 		next = (head + 1) % Sz;
@@ -42,13 +37,27 @@ public:
 		head = next;
 		return false;
 	}
-
-	T& front() { return buf[tail]; }
-	const T& front() const { return buf[tail]; }
-
+	
+	//! Get front element
+	T& front() { 
+		return buf[tail]; 
+	}
+	const T& front() const { 
+		return buf[tail];
+	}
+	//! Get the back element
+	T& back() {
+		std::size_t prev;
+		prev = (head -1) % Sz;
+		return buf[prev];
+	}
+	const T& back() const {
+		std::size_t prev;
+		prev = (head -1) % Sz;
+		return buf[prev];
+	}
 	//Pop element
-	bool pop(T &c)
-	{
+	bool pop(T &c) {
 		std::size_t next;
 		// check if FIFO has data
 		if (head == tail) return true;
@@ -58,8 +67,7 @@ public:
 		return false;
 	}
 	//Pop element
-	bool pop()
-	{
+	bool pop() {
 		std::size_t next;
 		// check if FIFO has data
 		if (head == tail) return true;
@@ -68,23 +76,18 @@ public:
 		return false;
 	}
 	//Get size
-	std::size_t size() const
-	{
+	std::size_t size() const {
 		return (Sz + head - tail) % Sz;
 	}
-	bool empty() const
-	{
+	bool empty() const {
 		return size()==0;
 	}
 	//Get free count
-	std::size_t free() const
-	{
+	std::size_t free() const {
 		return (Sz - 1 - size());
 	}
-
 	//Clear the fifo context
-	void erase()
-	{
+	void erase() {
 		head = 0;
 		tail = 0;
 	}
