@@ -70,13 +70,9 @@ int ham_digi::set_tx( bool totx )
 	if( !m_iodev->get_tx_codec() || !m_iodev->get_tx_codec() ) {
 		return err_no_modulation;
 	}
-	/* FIXME:Really is needed prevent stop transmission in the middle?
-	 */
-	//if( m_iodev->get_tx_codec()->is_transmitting()  )
-	//{
-	//	return err_tx_busy;
-	//}
-	if( totx && m_iodev->get_mode()==trx_device_base::mode::on ) {
+	if( !totx && m_iodev->get_mode()==trx_device_base::mode::transmit ) {
+		m_iodev->set_mode( trx_device_base::mode::on );
+	} else if( totx && m_iodev->get_mode()==trx_device_base::mode::on ) {
 		tx()->reset();
 		tx()->clear_tx();
 		m_iodev->set_mode( trx_device_base::mode::transmit );
