@@ -45,8 +45,7 @@ class decoder : public rx_codec {
 public:
 	static constexpr auto RCODE_ERR = -1;
 	static constexpr auto RCODE_OK = 0;
-	enum cbevent
-	{
+	enum cbevent {
 		cb_rxchar,
 		cb_clkerror,
 		cb_imdrdy
@@ -63,40 +62,46 @@ public:
 	}
 	//Reset decoder
 	virtual void reset();
-
 	//Set receive frequency
 	virtual void set_frequency( int freq );
-
 	//Set detector mode
 	virtual int set_mode( const modulation_config_base& cfg );
+	//Get detector mode
+	virtual int get_mode( modulation_config_base& cfg );
 	//Set AFC limit
-	virtual bool set_afc_limit( int limit );
+	virtual bool set_afc_limit( int limit ) {
+		m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
+		return false;
+	}
+	//Get afc limit
+	virtual int get_afc_limit() const {
+		return m_afc.get_afc_limit();
+	}
 	//Get current frequency
-	virtual int get_frequency() const
-	{
+	virtual int get_frequency() const {
 		return m_rx_frequency;
 	}
 	//Get signal level
-	virtual sqelch_value_type get_signal_level() const
-	{
+	virtual sqelch_value_type get_signal_level() const {
 		return m_squelch.get_level();
 	}
-	virtual bool get_sync_data(sync_array_type& sync_data) const
-	{
+	virtual bool get_sync_data(sync_array_type& sync_data) const {
 		sync_data =  m_sync.get_sync_data();
 		return false;
 	}
 	//Set squelch tresh
-	virtual void set_squelch( sqelch_value_type tresh, squelch_mode mode )
-	{
-		m_squelch.set_tresh( tresh, mode );
+	virtual void set_squelch( sqelch_value_type tresh, squelch_mode mode ) {
+		m_squelch.set_thresh( tresh, mode );
+	}
+	//! Get squelch
+	virtual sqelch_value_type get_squelch() const {
+		return m_squelch.get_thresh();
 	}
 private:
 	typedef mod_psk_config::mode mode;
 	typedef mod_psk_config::baud baudrate;
 	int decode_symb( std::complex<int> newsamp );
-	bool is_qpsk() const
-	{
+	bool is_qpsk() const {
 		return m_rx_mode != mode::bpsk;
 	}
 	//Numeric controlled oscillator and mixer

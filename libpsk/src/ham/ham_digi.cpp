@@ -171,6 +171,18 @@ ham_digi::rx_proxy ham_digi::rx( int id )
 	return rx_proxy( m_iodev.get(), id );
 }
 /* ------------------------------------------------------------------------- */
+//Get locked TX
+ham_digi::tx_proxy ham_digi::tx() const
+{
+	return tx_proxy( m_iodev.get() );
+}
+/* ------------------------------------------------------------------------- */
+//Locked access RX
+ham_digi::rx_proxy ham_digi::rx( int id ) const
+{
+	return rx_proxy( m_iodev.get(), id );
+}
+/* ------------------------------------------------------------------------- */
 //Get spectrum
 ham_digi::spectrum_proxy ham_digi::get_spectrum()
 {

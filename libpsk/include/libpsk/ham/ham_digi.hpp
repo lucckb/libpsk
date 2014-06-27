@@ -83,6 +83,9 @@ public:
 		tx_codec* operator->() {
 			return m_obj->get_tx_codec();
 		}
+		tx_codec const* operator->() const {
+			return m_obj->get_tx_codec();
+		}
 	private:
 		trx_device_base* m_obj {};
 	};
@@ -105,6 +108,9 @@ public:
 			if( m_obj ) m_obj->unlock();
 		}
 		rx_codec* operator->() {
+			return m_obj->get_rx_codec( m_id );
+		}
+		rx_codec const* operator->() const {
 			return m_obj->get_rx_codec( m_id );
 		}
 	private:
@@ -144,6 +150,10 @@ public:
 	tx_proxy tx();
 	//Locked access RX
 	rx_proxy rx( int id = 0 );
+	//Get locked TX
+	tx_proxy tx() const;
+	//Locked access RX
+	rx_proxy rx( int id = 0 ) const;
 	//Get spectrum
 	spectrum_proxy get_spectrum();
 private:

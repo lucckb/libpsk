@@ -110,26 +110,27 @@ public:
 	virtual void reset() = 0;
 	virtual void set_frequency( int freq ) = 0;
 	virtual int get_frequency( ) const = 0;
+	virtual sqelch_value_type get_squelch() const = 0;
 	virtual sqelch_value_type get_signal_level() const = 0;
 	virtual void set_squelch( sqelch_value_type , squelch_mode ) = 0;
 	virtual int set_mode( const modulation_config_base &config ) = 0;
-	virtual bool get_vector_data( signal_vector_type& ) const
-	{
+	virtual int get_mode( modulation_config_base& cfg ) = 0;
+	virtual bool get_vector_data( signal_vector_type& ) const {
 		//Not handled
 		return true;
 	}
-	virtual bool set_afc_limit( int /*limit*/ )
-	{
+	virtual bool set_afc_limit( int /*limit*/ ) {
 		//Not handled
 		return true;
 	}
-	virtual bool get_sync_data(sync_array_type& ) const
-	{
+	virtual int get_afc_limit() const {
+		return 0;
+	}
+	virtual bool get_sync_data(sync_array_type& ) const {
 		return true;
 	}
 protected:
-	void callback_notify( const event &ev )
-	{
+	void callback_notify( const event &ev ) {
 		m_callback( ev );
 	}
 private:

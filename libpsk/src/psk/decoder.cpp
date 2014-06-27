@@ -392,14 +392,6 @@ void decoder::set_frequency( int freq )
 	}
 }
 /* ------------------------------------------------------------------------- */
-//Set AFC limit
-bool decoder::set_afc_limit( int limit )
-{
-	m_afc.set_afc_limit( limit, m_sample_freq,  m_nco_phzinc );
-	return false;
-}
-
-/* ------------------------------------------------------------------------- */
 //Reset decoder
 void decoder::reset()
 {
@@ -411,6 +403,19 @@ void decoder::reset()
 	m_squelch.reset();
 }
 
+/* ------------------------------------------------------------------------- */
+/* Set modulator config */
+int decoder::get_mode( modulation_config_base& _cfg )
+{
+	if( _cfg.cfg_type() == modulation_config_base::type::psk ) {
+		mod_psk_config& cfg = static_cast<mod_psk_config&>(_cfg);
+		cfg.mmode = m_rx_mode;
+		cfg.baudrate = m_baudrate;
+		return RCODE_OK;
+	} else {
+		return RCODE_ERR;
+	}
+}
 /* ------------------------------------------------------------------------- */
 /* Set modulator config */
 int decoder::set_mode( const modulation_config_base& _cfg )

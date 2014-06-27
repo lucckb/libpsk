@@ -35,45 +35,47 @@ class squelch
 	static constexpr int PHZ_0_BMIN	= PI2/2.0			* SCALE	+ 0.5;		// Pi
 	static constexpr int PHZ_0_BMAX	= PI2				* SCALE	+ 0.5;
 private:
-	static constexpr int scale( const double v )
-	{
+	static constexpr int scale( const double v ) {
 		return v * SCALE + 0.5;
 	}
 public:
+	//! Maximum squelch value
+	static constexpr sqelch_value_type max_thresh = 100;
 	//Constructor
 	squelch()
 	{}
 	//Set squelch tresh
-	void set_tresh( sqelch_value_type thresh, squelch_mode mode )
-	{
+	void set_thresh( sqelch_value_type thresh, squelch_mode mode ) {
+		if( thresh  > max_thresh ) {
+			thresh = max_thresh;
+		}
 		m_sq_thresh = thresh;
 		if( mode == squelch_mode::fast ) m_squelch_speed = 20;
 		else if( mode == squelch_mode::slow ) m_squelch_speed = 75;
 	}
+	//Get SQL tresh
+	int get_thresh() const {
+		return m_sq_thresh;
+	}
 	//Get squelch level
-	int get_level() const
-	{
+	int get_level() const {
 		return m_sql_level>0?m_sql_level:0;
 	}
 	//Is squelch open
-	bool is_open() const
-	{
+	bool is_open() const {
 		return m_sq_open;
 	}
 	//IMD is valid
-	bool is_imd_valid() const
-	{
+	bool is_imd_valid() const {
 		return m_imd_valid;
 	}
 	//Reset squelch
-	void reset()
-	{
+	void reset() {
 		m_sql_level = 10;
 		m_dev_ave = 90*SCALE;
 	}
 	//Reset frequency
-	void reset_frequency()
-	{
+	void reset_frequency() {
 		m_pcnt = 0;
 		m_ncnt = 0;
 	}

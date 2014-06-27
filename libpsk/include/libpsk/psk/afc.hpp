@@ -47,6 +47,7 @@ public:
 	//Set AFC limit
 	void set_afc_limit( int limit, int freq, int phz_inc )
 	{
+		m_hz_limit = limit;
 		//No frequency control
 		if( limit == 0 ) m_fperr_ave = 0;
 		if( limit==0 ) m_afc_on = false;
@@ -58,6 +59,9 @@ public:
 		m_afc_max =  phz_inc + m_freq_error + m_afc_limit;
 		m_afc_min =  phz_inc + m_freq_error - m_afc_limit;
 		if(m_afc_min<=0) m_afc_min = 0;
+	}
+	int get_afc_limit() const {
+		return m_hz_limit;
 	}
 	//Handle sample timer
 	void handle_sample_timer( int phz_inc )
@@ -318,6 +322,7 @@ private:
 	int m_phz_inc_fract {};
 	int m_freq_error_fract {};
 	int m_fperr_ave {};
+	int m_hz_limit {};
 };
 
 /* ------------------------------------------------------------------------- */
