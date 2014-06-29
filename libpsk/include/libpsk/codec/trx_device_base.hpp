@@ -187,8 +187,7 @@ class trx_device_base	//Add noncopyable
 	static const auto RX_SAMPLE_RATE = 8000;
 public:
 	//Os specific locker
-	enum lock_type
-	{
+	enum lock_type {
 		lock_object,
 		lock_spectrum
 	};

@@ -7,7 +7,6 @@
 
 /* ------------------------------------------------------------------------- */
 #include "libpsk/codec/trx_device_base.hpp"
-
 /* ------------------------------------------------------------------------- */
 //Namespace def
 namespace ham {
@@ -56,11 +55,15 @@ int trx_device_base::get_rx_slot() const
 /* ------------------------------------------------------------------------- */
 /* Set RX or TX dev mode */
 void trx_device_base::set_mode( trx_device_base::mode m )
-{
-	//Safe lock
-	detail::safe_lock<decltype (*this)> lock(*this);
-	setup_sound_hardware( m );
-	m_mode = m;
+{	{
+		//Safe lock
+		detail::safe_lock<decltype (*this)> lock(*this);
+		setup_sound_hardware( m );
+		m_mode = m;
+	}
+	if( m == mode::off ) {
+		join();
+	}
 }
 /* ------------------------------------------------------------------------- */
 //ADC vector func

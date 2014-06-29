@@ -79,9 +79,8 @@ int stm32adac_device::setup_sound_hardware( trx_device_base::mode m )
 	if( get_mode()!=trx_device_base::mode::off && m == trx_device_base::mode::off ) {
 		//Disable and wait for stop
 		m_thread_cont = false;
-		join();
 		dbprintf("Thread exited - terminate");
-		return m_thread_status;
+		return err_success;
 	}
 	else if( get_mode()==trx_device_base::mode::off && m != trx_device_base::mode::off  ) {
 		//! Restart the thread again
@@ -132,6 +131,7 @@ void stm32adac_device::main()
 			}
 			unlock( trx_device_base::lock_object );
 		}
+		unlock( trx_device_base::lock_object );
 		dbprintf("Stop procesing PSK reason getval: %i error: %i", m_start.getval(), errcode );
 		if( get_mode()==trx_device_base::mode::on ) {
 			//Disable sound receive
@@ -165,6 +165,7 @@ int stm32adac_device::receive_thread()
 	return m_adc_audio.commit_buffer( ptr );
 }
 /* ------------------------------------------------------------------ */ 
+//! Transmit thread
 int stm32adac_device::transmit_thread() 
 {
 	auto buf = m_dac_audio.reserve_buffer();
