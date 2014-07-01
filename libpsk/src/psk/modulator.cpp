@@ -7,6 +7,7 @@
 /* ------------------------------------------------------------------------- */
 #include "libpsk/psk/modulator.hpp"
 #include <cmath>
+#include <foundation/dbglog.h>
 /* ------------------------------------------------------------------------- */
 namespace ham {
 namespace psk {
@@ -195,7 +196,6 @@ int modulator::set_mode( const modulation_config_base& _cfg )
 //Set char into the modulator
 void modulator::put_tx( short txchar )
 {
-	constexpr char BACK_SPACE_CODE = 0x08;
 	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP ) {
 		m_temp_need_shutoff = true;
 		if( m_state == state::tune )
@@ -203,22 +203,21 @@ void modulator::put_tx( short txchar )
 	} else if( txchar == ctrl_chars::TX_CNTRL_NOSQTAIL ) {
 		m_temp_no_squelch_tail = true;
 	} else {
-		if( (txchar != BACK_SPACE_CODE) || m_chqueue.empty() ) {
-			m_chqueue.push( txchar );
+		if( txchar != '\b' || m_chqueue.empty() ) {
+			m_chqueue.push_back( txchar );
 		} else {
-			//see if is a backspace and if can delete it in the queue
 			int nbs = 1;
 			while( !m_chqueue.empty() && nbs>0 ) {
 				short ch = 0;
-				m_chqueue.pop( ch );
-				if( ch == BACK_SPACE_CODE ) {
+				m_chqueue.pop_back( ch );
+				if( ch == '\b' ) {
 					nbs++;
 				} else {
 					nbs--;
 				}
 			} 
 			for( ;nbs > 0; --nbs ) {
-				m_chqueue.push( BACK_SPACE_CODE );
+				m_chqueue.push_back( '\b' );
 			}
 		}
 	}
@@ -266,13 +265,14 @@ bool modulator::operator()( sample_type* sample, size_t len )
 int modulator::get_tx_char()
 {
 	short ch;
-	if( m_chqueue.pop( ch ) )
+	if( m_chqueue.pop_front( ch ) ) {
 		ch = ctrl_chars::TXTOG_CODE;
-	if(m_temp_need_shutoff) {
+	}
+	if( m_temp_need_shutoff ) {
 		m_temp_need_shutoff = false;
 		m_need_shutoff = true;
 	}
-	if(m_temp_no_squelch_tail) {
+	if( m_temp_no_squelch_tail ) {
 		m_temp_no_squelch_tail = false;
 		m_no_squelch_tail = true;
 	}
@@ -335,9 +335,7 @@ int modulator::update_state_chr()
 //Clear queue
 void modulator::clear_tx()
 {
-	//EnterCriticalSection(&m_CriticalSection);
 	m_chqueue.erase();
-	//LeaveCriticalSection(&m_CriticalSection);
 	m_no_squelch_tail = false;
 	m_temp_need_shutoff = false;
 	m_temp_no_squelch_tail = false;

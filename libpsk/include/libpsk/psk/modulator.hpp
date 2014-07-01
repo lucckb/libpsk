@@ -68,7 +68,6 @@ public:
 		return m_state!=state::off;
 	}
 	//Modulator is in off state no generate carrier freq
-	//TODO: Add reset support
 	virtual void reset();
 private:
 	//Vector lookup table

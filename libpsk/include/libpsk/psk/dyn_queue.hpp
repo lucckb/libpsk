@@ -28,7 +28,7 @@ public:
 		delete [] buf;
 	}
 	//Push element
-	bool push(const T &c) {
+	bool push_back(const T &c) {
 		std::size_t next;
 		// check if FIFO has room
 		next = (head + 1) % Sz;
@@ -37,7 +37,23 @@ public:
 		head = next;
 		return false;
 	}
-	
+    //Pop back
+	bool pop_back( T &c ) {
+		if (head == tail) return true;
+		std::size_t prev;
+		prev = (head-1) % Sz;
+		c = buf[prev];
+		head = prev;
+		return false;
+	}
+    //Pop back2
+	bool pop_back( ) {
+		if (head == tail) return true;
+		std::size_t prev;
+		prev = (head-1) % Sz;
+		head = prev;
+		return false;
+	}
 	//! Get front element
 	T& front() { 
 		return buf[tail]; 
@@ -57,7 +73,7 @@ public:
 		return buf[prev];
 	}
 	//Pop element
-	bool pop(T &c) {
+	bool pop_front(T &c) {
 		std::size_t next;
 		// check if FIFO has data
 		if (head == tail) return true;
@@ -67,7 +83,7 @@ public:
 		return false;
 	}
 	//Pop element
-	bool pop() {
+	bool pop_front() {
 		std::size_t next;
 		// check if FIFO has data
 		if (head == tail) return true;
