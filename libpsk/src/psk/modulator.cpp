@@ -133,9 +133,9 @@ modulator::modulator( int sample_freq, int tx_freq, std::size_t char_que_len, tx
 	  	 m_p_psk_tx_q(psk_shapes::Z), m_chqueue( char_que_len )
 {
 
-	//TODO convert to array
-	for(int i=0; i<16; i++)
-		m_iq_phase_array[i] = 1;
+	for( auto& p : m_iq_phase_array ) {
+		p = 1;
+	}
 	m_present_phase = PHZ_OFF;
 	set_mode( mod_psk_config(mode::bpsk, baudrate::b31) );
 	set_freqency( tx_freq );
