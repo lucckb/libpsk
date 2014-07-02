@@ -18,9 +18,63 @@
 #include "libpsk/port/isix/stm32adac_device.hpp"
 #include <foundation/dbglog.h>
 #include <limits>
+#include <stm32gpio.h>
 /* ------------------------------------------------------------------ */
 namespace ham {
 namespace psk {
+/* ------------------------------------------------------------------ */
+namespace {
+namespace ptt {
+	namespace gpio {
+		static constexpr auto port = CONFIG_LIBPSK_PTT_PORT;
+		static constexpr auto pin = CONFIG_LIBPSK_PTT_PIN;
+	};
+		//! Init PTT ports
+		inline void init() {
+			using namespace stm32;
+			gpio_abstract_config( gpio::port, gpio::pin, AGPIO_MODE_OUTPUT_PP, AGPIO_SPEED_VLOW );
+			gpio_clr( gpio::port, gpio::pin );
+		}
+		//! PTT switch
+		enum class ctl: bool {
+			off,
+			on
+		};
+		//!Ptt control
+		inline void set( ctl state ) {
+			using namespace stm32;
+			if( state == ctl::on ) {
+				gpio_set( gpio::port, gpio::pin );
+			} else {
+				gpio_clr( gpio::port, gpio::pin );
+			}
+		}
+}}
+/* ------------------------------------------------------------------ */ 
+//! Constructor stuff
+stm32adac_device::stm32adac_device( handler_t evt_callback ) 
+		: trx_device_base( evt_callback ) 
+{
+	 start_thread( THREAD_STACK_SIZE, THREAD_PRIORITY );
+	 ptt::init();
+}
+/* ------------------------------------------------------------------ */
+//TX on
+int stm32adac_device::enable_hw_tx() {
+	auto ret =  m_dac_audio.play( get_tx_sample_rate() );
+	if( !ret ) {
+		ptt::set( ptt::ctl::on );
+	}
+	return ret;
+}
+/* ------------------------------------------------------------------ */ 
+//! TX off
+int stm32adac_device::disable_hw_tx() 
+{
+	auto ret = m_dac_audio.stop();
+	ptt::set( ptt::ctl::off );
+	return ret;
+}
 /* ------------------------------------------------------------------ */ 
 //! Lock or unlock selected primitive
 void stm32adac_device::lock( int id )

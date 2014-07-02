@@ -34,22 +34,7 @@ class stm32adac_device : public trx_device_base, isix::task_base {
 public:
 	static constexpr auto err_success = 0;
 	//! Constructor
-	stm32adac_device( handler_t evt_callback ) 
-		: trx_device_base( evt_callback ) {
-#if 0
-		//FIXME: Testonly sintab
-		    static constexpr auto fo = 1000;
-			static constexpr auto calc = 32767;
-			static constexpr float pi = 4 * std::atan(1);
-			for( int n = 0; n < 256; ++n ) {
-				m_tbuf[n] = calc + calc * std::sin( float(fo) * ( 2.0f * pi ) * (float)n / float(8000) );
-				//m_buf[n] = (n*65535)/ns;
-				//m_buf[n] = (n%2)?65535:0;
-				dbprintf("V=%i", (int)m_tbuf[n] - (int)calc );
-			}
-#endif
-			start_thread( THREAD_STACK_SIZE, THREAD_PRIORITY );
-	}
+	stm32adac_device( handler_t evt_callback );
 	//! Destructor
 	virtual ~stm32adac_device() {
 	}
@@ -71,12 +56,8 @@ private:
 	int disable_hw_rx() {
 		return m_adc_audio.stop();
 	}
-	int enable_hw_tx() {
-		return m_dac_audio.play( get_tx_sample_rate() );
-	}
-	int disable_hw_tx() {
-		return m_dac_audio.stop();
-	}
+	int enable_hw_tx();
+	int disable_hw_tx();
 	int receive_thread();
 	int transmit_thread();
 private:
