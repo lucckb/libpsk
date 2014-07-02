@@ -48,7 +48,7 @@ public:
 		return m_mode;
 	}
 	//Get next symbol
-	sym operator()( short ch )
+	sym operator()( txchar_type ch )
 	{
 		switch( m_mode )				//get next symbol to send
 		{
@@ -88,7 +88,7 @@ private:
 		3, 0, 2, 1, 2, 1, 3, 0
 	};
 
-	sym get_next_bpsk_symbol( short ch )
+	sym get_next_bpsk_symbol( txchar_type ch )
 	{
 		sym symb = m_last_symb;
 		if( m_tx_shift_reg == 0 )
@@ -101,7 +101,7 @@ private:
 			else
 			{
 				//ch = get_char();			//get next character to xmit
-				if( ch >=0 )			//if is not a control code
+				if( ch < ctrl_chars::TX_CNTRL_END_CODES )	//if is not a control code
 				{						//get next VARICODE codeword to send
 					_internal::varicode varicode;
 					m_tx_shift_reg = varicode.forward( ch );
@@ -131,7 +131,7 @@ private:
 		m_last_symb = symb;
 		return symb;
 	}
-	sym get_next_qpsk_symbol( short ch )
+	sym get_next_qpsk_symbol( txchar_type ch )
 	{
 		sym symb = (sym)ConvolutionCodeTable[m_tx_shift_reg&0x1F];	//get next convolution code
 		m_tx_shift_reg = m_tx_shift_reg<<1;
@@ -144,7 +144,7 @@ private:
 			else
 			{
 				//ch = get_char();			//get next character to xmit
-				if( ch >=0 )			//if not a control code
+				if( ch < ctrl_chars::TX_CNTRL_END_CODES )			//if not a control code
 				{						//get next VARICODE codeword to send
 					_internal::varicode varicode;
 					m_tx_code_word = varicode.forward( ch );
@@ -172,7 +172,7 @@ private:
 		}
 		return symb;
 	}
-	sym get_next_tune_symbol( short ch )
+	sym get_next_tune_symbol( txchar_type ch )
 	{
 		sym symb;
 		//const int ch = get_char();			//get next character to xmit

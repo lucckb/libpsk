@@ -194,7 +194,7 @@ int modulator::set_mode( const modulation_config_base& _cfg )
 
 /* ------------------------------------------------------------------------- */
 //Set char into the modulator
-void modulator::put_tx( short txchar )
+void modulator::put_tx( txchar_type txchar )
 {
 	if( txchar == ctrl_chars::TX_CNTRL_AUTOSTOP ) {
 		m_temp_need_shutoff = true;
@@ -208,7 +208,7 @@ void modulator::put_tx( short txchar )
 		} else {
 			int nbs = 1;
 			while( !m_chqueue.empty() && nbs>0 ) {
-				short ch = 0;
+				txchar_type ch = 0;
 				m_chqueue.pop_back( ch );
 				if( ch == '\b' ) {
 					nbs++;
@@ -239,7 +239,7 @@ bool modulator::operator()( sample_type* sample, size_t len )
 		{
 			m_psk_sample_cnt = 0;
 			m_ramp = 0;						// time to update symbol
-			short ch = 0;
+			txchar_type ch = 0;
 			if( m_encoder.eos() )
 			{
 				ch = update_state_chr();
@@ -264,7 +264,7 @@ bool modulator::operator()( sample_type* sample, size_t len )
 /* ------------------------------------------------------------------------- */
 int modulator::get_tx_char()
 {
-	short ch;
+	txchar_type ch;
 	if( m_chqueue.pop_front( ch ) ) {
 		ch = ctrl_chars::TXTOG_CODE;
 	}

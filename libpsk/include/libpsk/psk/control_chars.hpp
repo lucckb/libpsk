@@ -16,11 +16,12 @@ namespace psk {
 namespace ctrl_chars {
 enum ctrl_chars	: short
 {
-	TXOFF_CODE = -1,
-	TXON_CODE  = -2,
-	TXTOG_CODE = -3,
-	TX_CNTRL_AUTOSTOP = -4,
-	TX_CNTRL_NOSQTAIL = -5
+	TXOFF_CODE = 0xFF,
+	TXON_CODE  = 0xFE,
+	TXTOG_CODE = 0xFD,
+	TX_CNTRL_AUTOSTOP = 0xFC,
+	TX_CNTRL_NOSQTAIL = 0xFB,
+	TX_CNTRL_END_CODES = 0xF0
 };
 }
 

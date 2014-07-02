@@ -44,7 +44,7 @@ public:
 	//Operator on new samples
 	virtual bool operator()( sample_type* sample, size_t len );
 	//Set char into the modulator
-	virtual void put_tx( short c );
+	virtual void put_tx( txchar_type c );
 	//Clear queue
 	virtual void clear_tx();
 	//Set frequency
@@ -105,7 +105,7 @@ private:
 	bool m_need_shutoff { false };
 	int m_amble_ptr {};
 	bool m_no_squelch_tail {};
-	fnd::dyn_queue<short> m_chqueue;
+	fnd::dyn_queue<txchar_type> m_chqueue;
 	bool m_temp_need_shutoff {};
 	bool m_temp_no_squelch_tail {};
 	short m_symbol_rate { 3125 };
