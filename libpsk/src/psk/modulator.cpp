@@ -253,7 +253,7 @@ bool modulator::operator()( sample_type* sample, size_t len )
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][0];
 			m_iq_phase_array[v++] = m_vect_lookup[m_present_phase][1];
 			v = v & 0x000F;	//keep bounded to 16
-			if( m_state == state::sending && ch > 0 )
+			if( m_state == state::sending && ( ch>0 && ch<ctrl_chars::TX_CNTRL_END_CODES ) )
 				callback_notify( ch );
 		}
 	}
