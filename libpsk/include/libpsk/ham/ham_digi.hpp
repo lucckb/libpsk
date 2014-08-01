@@ -22,7 +22,7 @@ class ham_digi {
 	static constexpr auto TX_QUELEN = 512;
 public:
 	static constexpr auto SYS_CALLBACK_ID = -1;
-	static constexpr auto DEF_FREQ = 1000;
+	static constexpr auto DEF_FREQ = 1500;
 	/* Modulation structure */
 	enum class modulation : short {
 		notset,
