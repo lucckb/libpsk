@@ -107,7 +107,7 @@ private:
 	//Numeric controlled oscillator and mixer
 	dsp::nco_mixer<short, int ,512, PI2I> m_nco_mix;
 	baudrate m_baudrate {  baudrate::b63 };
-	int m_rx_frequency { 1500 };
+	int m_rx_frequency { 1000 };
 	int m_nco_phzinc;
 	_internal::symbol_synchronizer m_sync;
 	//TODO: FIXME: Temporary viterbi decoder is here
