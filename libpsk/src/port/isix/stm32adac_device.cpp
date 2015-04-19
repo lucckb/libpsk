@@ -80,9 +80,9 @@ int stm32adac_device::disable_hw_tx()
 void stm32adac_device::lock( int id )
 {
 	if( id == trx_device_base::lock_object ) {
-		m_lock.wait( isix::ISIX_TIME_INFINITE );
+		m_lock.wait( ISIX_TIME_INFINITE );
 	} else if ( id == trx_device_base::lock_spectrum ) {
-		m_spectrum.wait( isix::ISIX_TIME_INFINITE );
+		m_spectrum.wait( ISIX_TIME_INFINITE );
 	}
 }
 /* ------------------------------------------------------------------ */
@@ -150,9 +150,9 @@ void stm32adac_device::main()
 {
 	//! Signal when thread finish
 	for(;;) {
-		m_thread_status = m_start.wait( isix::ISIX_TIME_INFINITE );
+		m_thread_status = m_start.wait( ISIX_TIME_INFINITE );
 		if( m_thread_status < 0 )  break;
-		m_thread_status = m_busy.wait( isix::ISIX_TIME_INFINITE );
+		m_thread_status = m_busy.wait( ISIX_TIME_INFINITE );
 		if( m_thread_status < 0 ) break;
 		int errcode = 0;
 		dbprintf("Start procesing PSK");
@@ -243,7 +243,7 @@ int stm32adac_device::transmit_thread()
 //! Join and wait for finish trx
 int stm32adac_device::join() 
 {
-	return m_busy.wait( isix::ISIX_TIME_INFINITE );
+	return m_busy.wait( ISIX_TIME_INFINITE );
 }
 /* ------------------------------------------------------------------ */ 
 }}
