@@ -208,7 +208,7 @@ int stm32adac_device::receive_thread()
 {
 	auto ptr =  m_adc_audio.get_sample_buffer();
 	if( ptr == nullptr ) {
-		return m_adc_audio.errno();
+		return m_adc_audio.errnum();
 	}
 	//Convert unsigned int to signed int like sound card format
 	for( size_t i = 0; i < sample_size; ++i ) {
@@ -224,7 +224,7 @@ int stm32adac_device::transmit_thread()
 {
 	auto buf = m_dac_audio.reserve_buffer();
 	if( !buf ) {
-		return m_dac_audio.errno();
+		return m_dac_audio.errnum();
 	}
 	// Hardware DAC processing
 	const auto status = dac_process( reinterpret_cast<int16_t*>(buf), sample_size );
