@@ -7,9 +7,9 @@
 
 /*----------------------------------------------------------*/
 #include "libpsk/codec/spectrum_calculator.hpp"
-#include "libpsk/dsp/fft.h"
-#include "libpsk/dsp/sqrt_int.hpp"
-#include "libpsk/dsp/log2_int.hpp"
+#include <foundation/dsp/fft.hpp>
+#include <foundation/dsp/sqrt_int.hpp>
+#include <foundation/dsp/log2_int.hpp>
 #include <algorithm>
 #include <limits>
 /*----------------------------------------------------------*/

@@ -13,7 +13,7 @@
 #include <array>
 #include <functional>
 #include <limits>
-#include "libpsk/dsp/dsp_basic_ops.hpp"
+#include <foundation/dsp/dsp_basic_ops.hpp>
 
 
 /* ------------------------------------------------------------------------- */

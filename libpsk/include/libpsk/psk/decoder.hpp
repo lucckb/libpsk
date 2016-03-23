@@ -15,8 +15,8 @@
 #include <complex>
 #include <functional>
 #include "imd_calculator.hpp"
-#include "libpsk/dsp/nco_mixer.hpp"
-#include "libpsk/dsp/fir_decimate.hpp"
+#include <foundation/dsp/nco_mixer.hpp>
+#include <foundation/dsp/fir.hpp>
 #include "agc.hpp"
 #include "afc.hpp"
 #include "synchronizer.hpp"
@@ -122,10 +122,10 @@ private:
     _internal::symbol_decoder m_symb_decoder;
 	mode m_rx_mode { mode::bpsk };
     //FIR1 BITFIR_LENGTH
-    dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH, std::complex<long long> > m_fir1_dec;
-    dsp::fir_decimate< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long long> > m_fir2_dec;
-    dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_bit_fir;
-    dsp::fir_decimate< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_freq_fir;
+    dsp::fir< std::complex<short>,  short, DEC4_LPFIR_LENGTH, std::complex<long long> > m_fir1_dec;
+    dsp::fir< std::complex<short>,  short, DEC4_LPFIR_LENGTH,  std::complex<long long> > m_fir2_dec;
+    dsp::fir< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_bit_fir;
+    dsp::fir< std::complex<short>,  short, BITFIR_LENGTH, std::complex<long long> > m_freq_fir;
 };
 
 /* ------------------------------------------------------------------------- */

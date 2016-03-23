@@ -9,9 +9,9 @@
 #define LIBPSK_DIFF_ANGLE_CALC_HPP_
 /* ------------------------------------------------------------------------- */
 #include <complex>
-#include "libpsk/dsp/dsp_basic_ops.hpp"
-#include "libpsk/dsp/sqrt_int.hpp"
-#include "libpsk/dsp/atan2_int.hpp"
+#include <foundation/dsp/dsp_basic_ops.hpp>
+#include <foundation/dsp/sqrt_int.hpp>
+#include <foundation/dsp/atan2_int.hpp>
 
 /* ------------------------------------------------------------------------- */
 namespace ham {

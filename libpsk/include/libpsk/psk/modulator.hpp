@@ -14,7 +14,7 @@
 #include <array>
 #include "libpsk/psk/dyn_queue.hpp"
 #include "libpsk/psk/symbol_encoder.hpp"
-#include "libpsk/dsp/nco_mixer.hpp"
+#include <foundation/dsp/nco_mixer.hpp>
 #include "libpsk/codec/codec_types.hpp"
 #include "libpsk/codec/trx_device_base.hpp"
 #include "libpsk/codec/psk_config.hpp"
