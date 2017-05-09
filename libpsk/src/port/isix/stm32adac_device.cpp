@@ -26,7 +26,7 @@ namespace psk {
 namespace {
 namespace ptt {
 	namespace gpio {
-		static constexpr auto port = CONFIG_LIBPSK_PTT_PORT;
+		static const auto port = CONFIG_LIBPSK_PTT_PORT;
 		static constexpr auto pin = CONFIG_LIBPSK_PTT_PIN;
 	};
 		//! Init PTT ports

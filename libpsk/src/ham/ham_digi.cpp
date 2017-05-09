@@ -6,7 +6,7 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "libpsk/ham/ham_digi.hpp"
-#ifndef COMPILED_UNDER_ISIX
+#ifndef __arm__
 #include "libpsk/port/pulse/pulse_device.hpp"
 #else
 #include "libpsk/port/isix/stm32adac_device.hpp"
@@ -28,7 +28,7 @@ namespace {
 		std::abort();
 #endif
 	}
-#ifndef COMPILED_UNDER_ISIX
+#ifndef __arm__
 	inline trx_device_base* create_default_device( ham_digi::handler_t h )
 	{
 		static constexpr auto sys_idx = ham_digi::SYS_CALLBACK_ID;

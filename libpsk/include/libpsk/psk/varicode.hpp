@@ -5,18 +5,18 @@
  *      Author: lucck
  */
 
-/* ------------------------------------------------------------------------- */
+
 #ifndef HAM_PSK_INTERNAL_VARICODE_HPP_
 #define HAM_PSK_INTERNAL_VARICODE_HPP_
 
-/* ------------------------------------------------------------------------- */
+
 #include <cstdint>
-/* ------------------------------------------------------------------------- */
+
 namespace ham {
 namespace psk {
 namespace _internal {
 
-/* ------------------------------------------------------------------------- */
+
 class varicode
 {
 	    static constexpr uint8_t code_00_FF[] =
@@ -344,7 +344,7 @@ class varicode
 	    		0xB5B0	// ASCII = 255	101101011011
 	    	};
 public:
-	   constexpr uint8_t reverse( const uint16_t code )
+	   constexpr uint8_t reverse( const uint16_t code ) const
 	   {
 	       return ( code <= 0xFF)?( code_00_FF[code] ) :
 	             (( code >= 0x150 && code <= 0x1FF )?( code_150_1FF[ code - 0x150 ]) :
@@ -352,17 +352,17 @@ public:
 	             ((code >= 0x350 && code <=0x3FF)?(code_350_3FF[ code - 0x350 ]) :
 	             ((code >= 0x550 && code <=0x5AF)?(code_550_5AF[ code - 0x550 ]) :(0)))));
 	   }
-	   constexpr uint16_t forward( const uint8_t idx )
+	   constexpr uint16_t forward( const uint8_t idx ) const
 	   {
 		   return fwd_code_tbl[idx];
 	   }
 };
-/* ------------------------------------------------------------------------- */
+
 } /* namespace _internal */
-/* ------------------------------------------------------------------------- */
+
 } /* namespace psk */
-/* ------------------------------------------------------------------------- */
+
 } /* namespace ham */
-/* ------------------------------------------------------------------------- */
+
 #endif /* VARICODE_HPP_ */
-/* ------------------------------------------------------------------------- */
+
